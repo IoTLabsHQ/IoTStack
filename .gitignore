@@ -5,3 +5,4 @@ dashboard/dist/
 *.db
 *.db-journal
 *.log
+.DS_Store

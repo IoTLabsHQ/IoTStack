@@ -115,9 +115,16 @@ log "Syncing app code to ${TARGET}:${APP_DIR}..."
 ssh "${TARGET}" "command -v rsync >/dev/null || sudo apt-get -y -qq install rsync"
 ssh "${TARGET}" "mkdir -p '${APP_DIR}'"
 
+# --filter="P .env" is required in addition to the .gitignore exclude:
+# --delete removes anything on the receiver absent from the sender's file
+# list, and a gitignore-derived exclude alone does not reliably stop that
+# for a file that only exists on the receiver (confirmed by real testing —
+# .env was deleted on a live server without this). "P" is rsync's actual
+# delete-protect primitive.
 rsync -az --delete \
     --exclude=.git \
     --filter=":- .gitignore" \
+    --filter="P .env" \
     "${REPO_ROOT}/" "${TARGET}:${APP_DIR}/"
 
 
