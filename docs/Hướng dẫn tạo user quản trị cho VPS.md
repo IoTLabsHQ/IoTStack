@@ -907,18 +907,25 @@ bằng password và chưa có:
 
 nên cấu hình SSH key trước.
 
-Trên máy local:
+Trên máy local, tạo **key riêng cho VPS này** thay vì dùng chung `id_ed25519` mặc định — dễ thu hồi/xoay vòng sau này mà không ảnh hưởng các server khác:
 
 ```bash
-ssh-keygen -t ed25519
+ssh-keygen -t ed25519 -C "iotstack" -f ~/.ssh/iotstack_ed25519
 ```
 
-Nếu đã có SSH key thì không cần tạo lại.
+Sẽ tạo ra:
 
-Copy key:
+```text
+~/.ssh/iotstack_ed25519       (private key)
+~/.ssh/iotstack_ed25519.pub   (public key)
+```
+
+Nếu đã có key riêng cho VPS này rồi thì không cần tạo lại.
+
+Copy key (dùng `-i` để chỉ đúng key vừa tạo):
 
 ```bash
-ssh-copy-id root@SERVER_IP
+ssh-copy-id -i ~/.ssh/iotstack_ed25519.pub root@SERVER_IP
 ```
 
 Sau đó kiểm tra trên VPS:
@@ -931,6 +938,27 @@ Nếu đã có key, chạy:
 
 ```bash
 /root/setup-vps-user.sh
+```
+
+Vì key không nằm ở đường dẫn mặc định, từ bước này trở đi khi SSH vào user mới cần chỉ định `-i`:
+
+```bash
+ssh -i ~/.ssh/iotstack_ed25519 iotstack@SERVER_IP
+```
+
+Hoặc tiện hơn, khai báo alias trong `~/.ssh/config` trên máy local để không phải gõ `-i` mỗi lần:
+
+```text
+Host iotstack-vps
+    HostName SERVER_IP
+    User iotstack
+    IdentityFile ~/.ssh/iotstack_ed25519
+```
+
+Từ đó chỉ cần:
+
+```bash
+ssh iotstack-vps
 ```
 
 ---
