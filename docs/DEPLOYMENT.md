@@ -68,7 +68,7 @@ run them by hand.
 Don't operate the server as `root` day-to-day. Set up a dedicated
 non-root admin user with SSH-key-only access and passwordless `sudo`:
 
-- [`Hướng dẫn tạo user quản trị cho VPS.md`](Hướng%20dẫn%20tạo%20user%20quản%20trị%20cho%20VPS.md) —
+- [`vps-admin-user-setup.md`](vps-admin-user-setup.md) —
   full walkthrough (Vietnamese), including generating a dedicated local SSH
   key for the server and an `~/.ssh/config` alias.
 - [`setup-vps-user.sh`](setup-vps-user.sh) — the bootstrap script referenced
