@@ -20,7 +20,7 @@ team's device fleet.
   convenience script or your distro's Docker repo — see
   [docs.docker.com/engine/install](https://docs.docker.com/engine/install/).
 - **A DNS A record** pointing your domain at the server's IP, if you want
-  automatic HTTPS (`DOMAIN` in `.env` — see the main [`README.md`](../README.md#configuration)).
+  automatic HTTPS (`DOMAIN` in `.env` — see the main [`README.md`](../README.md#cấu-hình)).
   Not required for a plain HTTP/local setup.
 - **Open inbound ports**: `22` (SSH), `80`/`443` (dashboard, HTTP→HTTPS),
   `1883`/`8883`/`9001` (MQTT plain/TLS/WebSocket).

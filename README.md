@@ -1,30 +1,42 @@
 # IoTStack
 
-A self-hosted MQTT broker with a built-in web dashboard, built for makers who
-want to run their own IoT infrastructure instead of depending on a cloud
-service. Deploy it on a small VPS, open the dashboard, create credentials
-for a device, and start coding.
+IoTStack là nền tảng IoT mã nguồn mở, self-hosted dành cho maker, học sinh, sinh viên, giáo viên và developer muốn tự vận hành hạ tầng IoT mà không phụ thuộc vào dịch vụ cloud được quản lý.
 
-## What you get
+Nền tảng cung cấp một **IoT stack tối giản, nhẹ nhưng mạnh mẽ** với các tính năng tích hợp sẵn:
 
-- **MQTT broker** (Mosquitto) — plain MQTT, MQTTS (TLS), and MQTT over
-  WebSocket, so both firmware and browser clients can connect.
-- **A dashboard** — create and manage device credentials, watch messages
-  arrive in real time, send commands, see storage usage per device.
-- **Per-device isolation** — every device gets its own credential and can
-  only publish/subscribe under its own topic prefix. One compromised device
-  credential can't see or touch another device's data.
-- **Sane defaults for a small deployment** — a flat rate limit and storage
-  cap apply to every device (configurable), old messages expire
-  automatically, and the whole stack is designed to run comfortably on a
-  1-2 CPU / 2 GB RAM VPS.
-- **Works over your server's IP out of the box** — plain HTTP, no domain
-  or TLS setup required to get started.
-- **Automatic HTTPS, whenever you want it** — add a domain anytime from
-  the dashboard's Settings page (or change it again later, no limit) and
-  it gets a real certificate live, with no restart.
+* **Mosquitto MQTT Broker nhẹ** để giao tiếp ổn định với thiết bị
+* **Web Dashboard tích hợp sẵn** để quản lý kết nối MQTT, thông tin xác thực và thiết bị
+* **Giám sát & Điều khiển thiết bị** để theo dõi trạng thái, xem dữ liệu và điều khiển thiết bị theo thời gian thực
+* **Quản lý thiết bị đơn giản** để tạo và quản lý thông tin xác thực cho từng thiết bị
+* **Tối ưu cho máy chủ nhỏ** — được thiết kế để chạy tốt trên server khoảng **2 vCPU và 2 GB RAM** cho nhu cầu Maker và phát triển
 
-## Quick start
+Toàn bộ những thành phần cần thiết cho một IoT backend thực tế được đóng gói trong một stack nhỏ gọn. Bạn có thể triển khai trên server của riêng mình, kết nối, giám sát và điều khiển thiết bị, đồng thời giữ toàn bộ hạ tầng IoT dưới quyền kiểm soát của bạn.
+
+IoTStack hoạt động hoàn toàn độc lập, không yêu cầu tài khoản IoTLabs Cloud và được **IoTLabs Team** duy trì, cập nhật. Dữ liệu IoT của bạn luôn nằm trên server do chính bạn kiểm soát — không được gửi hoặc lưu trữ trên IoTLabs Cloud.
+
+
+## Bạn nhận được gì
+
+- **MQTT broker** (Mosquitto) — MQTT thường, MQTTS (TLS), và MQTT qua
+  WebSocket, để cả firmware lẫn trình duyệt đều kết nối được.
+- **Dashboard tích hợp** — tạo và quản lý thông tin xác thực thiết bị, xem
+  tin nhắn đến theo thời gian thực, gửi lệnh, xem dung lượng lưu trữ từng
+  thiết bị.
+- **Cô lập theo từng thiết bị** — mỗi thiết bị có thông tin xác thực riêng,
+  chỉ publish/subscribe được trong tiền tố topic của chính nó. Một thiết bị
+  bị lộ thông tin xác thực không thể thấy hay đụng vào dữ liệu thiết bị
+  khác.
+- **Cấu hình mặc định hợp lý cho triển khai nhỏ** — giới hạn tốc độ gửi tin
+  và dung lượng lưu trữ áp dụng cho mọi thiết bị (có thể chỉnh), tin nhắn cũ
+  tự động hết hạn, toàn bộ stack được thiết kế chạy thoải mái trên VPS
+  1-2 CPU / 2 GB RAM.
+- **Chạy được ngay qua IP server** — HTTP thường, không cần domain hay TLS
+  để bắt đầu.
+- **Tự động HTTPS khi bạn cần** — thêm domain bất cứ lúc nào từ trang
+  Settings của dashboard (đổi lại cũng được, không giới hạn), chứng chỉ
+  thật được cấp ngay, không cần restart.
+
+## Bắt đầu nhanh
 
 ```bash
 git clone <this-repository> iotstack
@@ -35,23 +47,23 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open `http://<your-server-ip>`, log in with the admin account you
-configured, and create your first device. Add a domain anytime from the
-dashboard's Settings page to get `https://your-domain` with a real
-certificate — no `.env` edit, no restart. The dashboard shows the exact
-host/port and credential to put in your firmware.
+Mở `http://<your-server-ip>`, đăng nhập bằng tài khoản admin bạn đã cấu
+hình, và tạo thiết bị đầu tiên. Thêm domain bất cứ lúc nào từ trang
+Settings của dashboard để có `https://your-domain` với chứng chỉ thật —
+không cần sửa `.env`, không cần restart. Dashboard hiển thị chính xác
+host/port và thông tin xác thực để đưa vào firmware.
 
-## Connecting a device
+## Kết nối thiết bị
 
-Every device gets:
+Mỗi thiết bị có:
 
-- A **client ID** — also the prefix of every topic it's allowed to use:
+- **Client ID** — cũng là tiền tố của mọi topic thiết bị được phép dùng:
   `devices/{client_id}/...`
-- A **username and password** — shown once when the device is created (or
-  regenerated). If you lose it, regenerate a new one; the old credential
-  stops working immediately.
+- **Username và password** — hiển thị một lần duy nhất khi thiết bị được
+  tạo (hoặc tạo lại). Nếu mất, tạo lại thông tin xác thực mới; thông tin cũ
+  ngừng hoạt động ngay lập tức.
 
-Example (plain MQTT, port 1883):
+Ví dụ (MQTT thường, port 1883):
 
 ```
 Host:     your-server-or-domain
@@ -62,50 +74,50 @@ Publish:  devices/<client_id>/telemetry
 Subscribe: devices/<client_id>/cmd
 ```
 
-Message types recognized by the collector: `ping`, `status`, `telemetry`,
-`cmd` — a message published to any other topic suffix is dropped.
+Các loại tin nhắn được collector nhận dạng: `ping`, `status`, `telemetry`,
+`cmd` — tin nhắn gửi tới bất kỳ topic suffix nào khác sẽ bị loại bỏ.
 
-## Configuration
+## Cấu hình
 
-All configuration is environment variables in `.env` — see `.env.example`
-for the full list with comments. The important ones:
+Toàn bộ cấu hình là biến môi trường trong `.env` — xem `.env.example` để có
+danh sách đầy đủ kèm chú thích. Các biến quan trọng:
 
-| Variable | What it controls |
+| Variable | Điều khiển gì |
 |---|---|
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Dashboard login, seeded once on first boot |
-| `DOMAIN` | Optional first-boot convenience only — sets the initial domain. Change it anytime after that from the dashboard's Settings page instead; `.env` is never re-read for this. |
-| `RATE_LIMIT_MSG_PER_MIN` | Messages/minute allowed per device |
-| `STORAGE_CAP_MB` | Stored message data allowed per device |
-| `RAW_RETENTION_DAYS` | How long messages are kept before automatic deletion |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Tài khoản đăng nhập dashboard, được khởi tạo một lần duy nhất khi chạy lần đầu |
+| `DOMAIN` | Chỉ là tiện ích cho lần chạy đầu tiên — thiết lập domain ban đầu. Sau đó đổi domain bất cứ lúc nào từ trang Settings của dashboard; `.env` không bao giờ được đọc lại cho việc này. |
+| `RATE_LIMIT_MSG_PER_MIN` | Số tin nhắn/phút cho phép mỗi thiết bị |
+| `STORAGE_CAP_MB` | Dung lượng dữ liệu tin nhắn được lưu cho phép mỗi thiết bị |
+| `RAW_RETENTION_DAYS` | Thời gian giữ tin nhắn trước khi tự động xoá |
 
-## Architecture and security
+## Kiến trúc và bảo mật
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit
-together, and [`docs/SECURITY.md`](docs/SECURITY.md) for the security model
-and its known limitations.
+Xem [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) để biết các thành phần
+khớp với nhau ra sao, và [`docs/SECURITY.md`](docs/SECURITY.md) để biết mô
+hình bảo mật và các giới hạn đã biết.
 
-## Deployment
+## Triển khai
 
-Have a fresh VPS and SSH access? One command deploys the whole stack:
+Có VPS mới và quyền truy cập SSH? Một lệnh duy nhất triển khai toàn bộ
+stack:
 
 ```bash
 deploy/bootstrap.sh root@your-server-ip
 ```
 
-See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for server requirements,
-what that command does, flags, and the manual steps if you'd rather run
-them by hand.
+Xem [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) để biết yêu cầu server, lệnh
+đó làm những gì, các flag, và các bước thủ công nếu bạn muốn tự chạy tay.
 
-## Resource footprint
+## Tài nguyên sử dụng
 
-Three containers, roughly 150-300 MB combined RAM at idle: Mosquitto, a
-small Node.js API/collector service, and Caddy as the HTTPS front door.
-Comfortably fits a 1-2 CPU / 2 GB RAM VPS for a few dozen devices.
+Ba container, tổng RAM khi idle khoảng 150-300 MB: Mosquitto, một service
+Node.js API/collector nhỏ, và Caddy làm cổng HTTPS. Chạy thoải mái trên VPS
+1-2 CPU / 2 GB RAM cho vài chục thiết bị.
 
-## License
+## Giấy phép
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — xem [`LICENSE`](LICENSE).
 
 ---
 
-Maintained by IoTLabs.
+Được duy trì bởi IoTLabs Team.
