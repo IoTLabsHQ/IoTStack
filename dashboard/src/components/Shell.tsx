@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { logout } from "../lib/api/auth";
 
-const navItems = [
+export const navItems = [
   { to: "/", label: "Overview" },
   { to: "/devices", label: "Devices" },
   { to: "/settings", label: "Settings" },

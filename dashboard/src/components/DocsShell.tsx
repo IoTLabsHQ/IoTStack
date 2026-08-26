@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useDocsLang, type DocsLang } from "../lib/docsLang";
 import { DOC_GROUPS } from "../lib/docs-manifest";
+import { navItems } from "./Shell";
+import { useAuthStore } from "../store/authStore";
 
 function DocsNav({ lang }: { lang: DocsLang }) {
   return (
@@ -42,14 +44,37 @@ function DocsNav({ lang }: { lang: DocsLang }) {
 
 export function DocsShell({ children }: { children: (lang: DocsLang) => ReactNode }) {
   const [lang, setLang] = useDocsLang();
+  const admin = useAuthStore((s) => s.admin);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link to="/docs" className="text-lg font-semibold tracking-tight">
-            IoTStack
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link to="/docs" className="text-lg font-semibold tracking-tight">
+              IoTStack
+            </Link>
+            {admin && (
+              <nav className="flex gap-1">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                    className={({ isActive }) =>
+                      `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-slate-900 text-white"
+                          : "text-slate-600 hover:bg-slate-100"
+                      }`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
+          </div>
           <div className="flex gap-1 rounded-md border border-slate-300 p-0.5 text-sm">
             {(["en", "vi"] as const).map((l) => (
               <button
