@@ -4,7 +4,7 @@
 # will own the deployment (root is fine for a brand new box — it does not
 # create a separate admin user the way deploy/bootstrap.sh does).
 #
-#   curl -fsSL https://raw.githubusercontent.com/quan-vu/IoTStack/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
 #
 # Safe to re-run against an already-installed instance: it detects that
 # and asks before touching anything.
@@ -18,11 +18,11 @@ APP_DIR="${HOME}/iotstack"
 # --- Source resolution ---------------------------------------------------
 # DEV-ONLY override (never set this in the public one-liner instructions):
 #   IOTSTACK_SOURCE_DIR=/path/to/local/checkout ./install.sh
-# EVENTUAL PUBLIC DEFAULT (used once github.com/quan-vu/IoTStack is public):
-#   curl -fsSL https://raw.githubusercontent.com/quan-vu/IoTStack/main/install.sh | sh
+# EVENTUAL PUBLIC DEFAULT (used once github.com/IoTLabsHQ/IoTStack is public):
+#   curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
 # ---------------------------------------------------------------------------
 IOTSTACK_SOURCE_DIR="${IOTSTACK_SOURCE_DIR:-}"
-IOTSTACK_SOURCE_URL="${IOTSTACK_SOURCE_URL:-https://github.com/quan-vu/IoTStack/archive/refs/heads/main.tar.gz}"
+IOTSTACK_SOURCE_URL="${IOTSTACK_SOURCE_URL:-https://github.com/IoTLabsHQ/IoTStack/archive/refs/heads/main.tar.gz}"
 
 # Non-interactive overrides, for scripted/CI use — skip the matching prompt.
 IOTSTACK_REINSTALL="${IOTSTACK_REINSTALL:-}"        # fresh | keep

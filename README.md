@@ -103,7 +103,7 @@ Có VPS mới? Một lệnh duy nhất cài đặt toàn bộ stack, chạy ngay
 server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/quan-vu/IoTStack/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
 ```
 
 Xem [Cài đặt bằng một lệnh](docs/deployment/002_installer.vi.md) để biết

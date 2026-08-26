@@ -4,7 +4,7 @@ Set up IoTStack on a fresh Linux server (Ubuntu/Debian) with a single
 command, run directly on the server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/quan-vu/IoTStack/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
 ```
 
 This installs Docker if it isn't already there, downloads IoTStack, and
@@ -47,7 +47,7 @@ For scripted installs, skip the prompts with environment variables:
 
 ```bash
 IOTSTACK_REINSTALL=fresh IOTSTACK_DOMAIN_CHOICE=keep \
-  curl -fsSL https://raw.githubusercontent.com/quan-vu/IoTStack/main/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
 ```
 
 - `IOTSTACK_REINSTALL=fresh` or `keep` — skips the reinstall prompt.
