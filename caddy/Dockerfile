@@ -11,6 +11,7 @@ FROM caddy:2-alpine
 
 COPY caddy/Caddyfile /etc/caddy/Caddyfile
 COPY --from=dashboard-builder /app/dist /srv/dashboard
+COPY docs /srv/dashboard/docs-content
 
 # --resume: load the last live config (autosaved after any admin-API
 # push, e.g. a domain change) instead of the static Caddyfile above,

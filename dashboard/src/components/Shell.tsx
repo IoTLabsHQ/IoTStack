@@ -7,6 +7,7 @@ const navItems = [
   { to: "/", label: "Overview" },
   { to: "/devices", label: "Devices" },
   { to: "/settings", label: "Settings" },
+  { to: "/docs", label: "Documentation" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
