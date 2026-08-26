@@ -4,7 +4,7 @@
 # will own the deployment (root is fine for a brand new box — it does not
 # create a separate admin user the way deploy/bootstrap.sh does).
 #
-#   curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | bash
 #
 # Safe to re-run against an already-installed instance: it detects that
 # and asks before touching anything.
@@ -19,7 +19,7 @@ APP_DIR="${HOME}/iotstack"
 # DEV-ONLY override (never set this in the public one-liner instructions):
 #   IOTSTACK_SOURCE_DIR=/path/to/local/checkout ./install.sh
 # EVENTUAL PUBLIC DEFAULT (used once github.com/IoTLabsHQ/IoTStack is public):
-#   curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | bash
 # ---------------------------------------------------------------------------
 IOTSTACK_SOURCE_DIR="${IOTSTACK_SOURCE_DIR:-}"
 IOTSTACK_SOURCE_URL="${IOTSTACK_SOURCE_URL:-https://github.com/IoTLabsHQ/IoTStack/archive/refs/heads/main.tar.gz}"
@@ -40,9 +40,9 @@ log() {
     echo "[install] $*"
 }
 
-# Works whether invoked directly (sh install.sh) or piped (curl | sh) —
-# in the piped case stdin is the script itself, so prompts must read from
-# the controlling terminal explicitly instead.
+# Works whether invoked directly (bash install.sh) or piped
+# (curl | bash) — in the piped case stdin is the script itself, so
+# prompts must read from the controlling terminal explicitly instead.
 ask() {
     local prompt="$1" reply
     if [ -t 0 ]; then

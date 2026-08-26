@@ -4,7 +4,7 @@ Cài IoTStack lên server Linux mới (Ubuntu/Debian) chỉ với một lệnh, 
 trực tiếp trên server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | bash
 ```
 
 Lệnh này tự cài Docker nếu chưa có, tải IoTStack về, và khởi động stack.
@@ -45,7 +45,7 @@ trường:
 
 ```bash
 IOTSTACK_REINSTALL=fresh IOTSTACK_DOMAIN_CHOICE=keep \
-  curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/IoTLabsHQ/IoTStack/main/install.sh | bash
 ```
 
 - `IOTSTACK_REINSTALL=fresh` hoặc `keep` — bỏ qua câu hỏi cài lại.
