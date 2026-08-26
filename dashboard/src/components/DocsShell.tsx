@@ -1,6 +1,44 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useDocsLang, type DocsLang } from "../lib/docsLang";
+import { DOC_GROUPS } from "../lib/docs-manifest";
+
+function DocsNav({ lang }: { lang: DocsLang }) {
+  return (
+    <nav className="flex flex-col gap-5">
+      <NavLink
+        to="/docs/changelog"
+        className={({ isActive }) =>
+          `text-sm font-medium ${isActive ? "text-slate-900" : "text-slate-600 hover:text-slate-900"}`
+        }
+      >
+        {lang === "vi" ? "Nhật ký thay đổi" : "Changelog"}
+      </NavLink>
+
+      {DOC_GROUPS.map((g) => (
+        <div key={g.group}>
+          <p className="mb-2 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+            {g.groupLabel[lang]}
+          </p>
+          <ul className="flex flex-col gap-2">
+            {g.docs.map((d) => (
+              <li key={d.slug}>
+                <NavLink
+                  to={`/docs/${g.group}/${d.slug}`}
+                  className={({ isActive }) =>
+                    `text-sm ${isActive ? "font-medium text-slate-900" : "text-slate-600 hover:text-slate-900"}`
+                  }
+                >
+                  {d.title[lang]}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
 
 export function DocsShell({ children }: { children: (lang: DocsLang) => ReactNode }) {
   const [lang, setLang] = useDocsLang();
@@ -8,7 +46,7 @@ export function DocsShell({ children }: { children: (lang: DocsLang) => ReactNod
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link to="/docs" className="text-lg font-semibold tracking-tight">
             IoTStack
           </Link>
@@ -27,7 +65,12 @@ export function DocsShell({ children }: { children: (lang: DocsLang) => ReactNod
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-8">{children(lang)}</main>
+      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8 md:flex-row">
+        <aside className="shrink-0 md:w-56">
+          <DocsNav lang={lang} />
+        </aside>
+        <main className="min-w-0 max-w-3xl flex-1">{children(lang)}</main>
+      </div>
     </div>
   );
 }
