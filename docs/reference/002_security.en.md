@@ -131,7 +131,7 @@ Documented rather than hidden, in the spirit of not overclaiming:
 
 - **No horizontal scaling.** Rate limiting and login backoff are in-process
   memory, correct only when `api` runs as a single instance (which is the
-  only supported deployment shape today — see [`ARCHITECTURE.md`](ARCHITECTURE.md)
+  only supported deployment shape today — see [Architecture](001_architecture.en.md)
   for why). Running more than one `api` replica would silently multiply
   every device's effective rate limit by the replica count.
 - **No device-level auth backoff.** Because Mosquitto authenticates

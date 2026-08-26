@@ -92,21 +92,26 @@ danh sách đầy đủ kèm chú thích. Các biến quan trọng:
 
 ## Kiến trúc và bảo mật
 
-Xem [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) để biết các thành phần
-khớp với nhau ra sao, và [`docs/SECURITY.md`](docs/SECURITY.md) để biết mô
-hình bảo mật và các giới hạn đã biết.
+Xem [Kiến trúc](docs/reference/001_architecture.vi.md) để biết các thành
+phần khớp với nhau ra sao, và [Bảo mật](docs/reference/002_security.vi.md)
+để biết mô hình bảo mật và các giới hạn đã biết. Toàn bộ tài liệu cũng
+xem được ngay trên dashboard, ở trang **Documentation**.
 
 ## Triển khai
 
-Có VPS mới và quyền truy cập SSH? Một lệnh duy nhất triển khai toàn bộ
-stack:
+Có VPS mới? Một lệnh duy nhất cài đặt toàn bộ stack, chạy ngay trên
+server:
 
 ```bash
-deploy/bootstrap.sh root@your-server-ip
+curl -fsSL https://raw.githubusercontent.com/quan-vu/IoTStack/main/install.sh | sh
 ```
 
-Xem [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) để biết yêu cầu server, lệnh
-đó làm những gì, các flag, và các bước thủ công nếu bạn muốn tự chạy tay.
+Xem [Cài đặt bằng một lệnh](docs/deployment/002_installer.vi.md) để biết
+chi tiết — cách xử lý khi cài lại, giữ domain/SSL, và các tuỳ chọn không
+tương tác.
+
+Muốn triển khai từ máy tính của bạn qua SSH thay vì chạy lệnh trực tiếp
+trên server? Xem [Cài đặt VPS thủ công](docs/deployment/003_manual-vps-setup.vi.md).
 
 ## Tài nguyên sử dụng
 

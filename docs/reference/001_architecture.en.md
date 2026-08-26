@@ -95,7 +95,7 @@ already has broad subscribe rights). For each message:
 4. **Storage cap** — a single atomic `UPDATE` against the device's
    `storage_usage` row, checked and incremented in one SQL statement
    (`STORAGE_CAP_MB`). SQLite's single-writer model makes this
-   inherently race-free — see [`SECURITY.md`](SECURITY.md) for why that
+   inherently race-free — see [Security](002_security.en.md) for why that
    matters.
 5. **Persist** — written to `messages` with an `expires_at` computed from
    `RAW_RETENTION_DAYS` at insert time.
@@ -115,7 +115,7 @@ Single SQLite file (`better-sqlite3`, WAL mode). Five tables:
   `client_id`), a display name, and timestamps. **Does not store the MQTT
   password or its hash** — that lives entirely inside Mosquitto's Dynamic
   Security plugin store, which never returns it once set. See
-  [`SECURITY.md`](SECURITY.md) for what this means for the dashboard's
+  [Security](002_security.en.md) for what this means for the dashboard's
   "show once" credential UX.
 - `messages` — one row per persisted message, with the topic, type,
   payload, byte size, and TTL deadline.
@@ -125,7 +125,7 @@ Single SQLite file (`better-sqlite3`, WAL mode). Five tables:
 - `settings` — a single row (`id = 1`): the current domain (empty by
   default), and SMTP config with `smtp_verified_at` — non-null only once
   a real connection test has succeeded, which is what "SMTP is active"
-  actually means (see [`SECURITY.md`](SECURITY.md)).
+  actually means (see [Security](002_security.en.md)).
 
 ## Why these choices instead of the more common alternatives
 
@@ -151,7 +151,7 @@ platform:
   in the `api` process's memory. This is only correct because the service
   runs as a single instance — if this project ever needed to scale
   horizontally, that assumption would need to be revisited (see
-  [`SECURITY.md`](SECURITY.md)'s limitations section).
+  [Security](002_security.en.md)'s limitations section).
 - **Mosquitto's Dynamic Security plugin instead of a custom HTTP auth
   callback.** No extra network round trip per connection, no separate
   service that has to stay up for devices to authenticate at all — the

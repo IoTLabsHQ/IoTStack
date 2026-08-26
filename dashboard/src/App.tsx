@@ -6,6 +6,8 @@ import { DevicesPage } from "./pages/DevicesPage";
 import { DeviceDetailPage } from "./pages/DeviceDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { DocsPage } from "./pages/DocsPage";
+import { ChangelogPage } from "./pages/ChangelogPage";
+import { DocDetailPage } from "./pages/DocDetailPage";
 
 function protectedRoute(element: React.ReactNode) {
   return <RequireAuth>{element}</RequireAuth>;
@@ -14,6 +16,8 @@ function protectedRoute(element: React.ReactNode) {
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/docs", element: <DocsPage /> },
+  { path: "/docs/changelog", element: <ChangelogPage /> },
+  { path: "/docs/:group/:slug", element: <DocDetailPage /> },
   { path: "/", element: protectedRoute(<OverviewPage />) },
   { path: "/devices", element: protectedRoute(<DevicesPage />) },
   { path: "/devices/:id", element: protectedRoute(<DeviceDetailPage />) },
