@@ -42,14 +42,6 @@ function CreatedCredentialBanner({
           }}
         />
       </div>
-      <ArduinoCodeSection
-        credential={{
-          displayName: created.device.displayName,
-          clientId: created.device.clientId,
-          mqttUsername: created.device.mqttUsername,
-          password: created.password,
-        }}
-      />
     </div>
   );
 }
@@ -139,6 +131,17 @@ export function DevicesPage() {
         </div>
       ) : (
         <p className="text-sm text-slate-500">No devices yet — create one above.</p>
+      )}
+
+      {created && (
+        <ArduinoCodeSection
+          credential={{
+            displayName: created.device.displayName,
+            clientId: created.device.clientId,
+            mqttUsername: created.device.mqttUsername,
+            password: created.password,
+          }}
+        />
       )}
     </Shell>
   );
