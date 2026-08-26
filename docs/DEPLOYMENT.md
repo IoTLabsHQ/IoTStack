@@ -25,7 +25,45 @@ team's device fleet.
 - **Open inbound ports**: `22` (SSH), `80`/`443` (dashboard, HTTP→HTTPS),
   `1883`/`8883`/`9001` (MQTT plain/TLS/WebSocket).
 
-## First-time server access
+## Automated deploy (recommended)
+
+From your own machine — not the server — with this repository checked
+out and your SSH key already authorized on the target:
+
+```bash
+deploy/bootstrap.sh root@your-server-ip
+```
+
+That single command does everything: creates a non-root admin user
+with SSH-key-only access (skipped if one already exists), installs
+Docker Engine + the Compose plugin (skipped if already installed),
+copies this checkout to the server, generates `.env` with real random
+secrets on first deploy, and starts the stack — then waits for the
+API to report healthy before it exits.
+
+A VPS you already have an admin user on works the same way, just
+target that user instead of `root`:
+
+```bash
+deploy/bootstrap.sh iotstack@your-server-ip
+```
+
+Optional flags: `--domain example.com` (for a real Let's Encrypt
+certificate instead of the self-signed one for `localhost`) and
+`--admin-email you@example.com` (skips the interactive prompt). If
+`--admin-email` is given without a password, one is generated and
+printed once at the end — save it immediately.
+
+Re-running `bootstrap.sh` against an already-deployed server is safe:
+it skips steps that are already done and updates the running code
+without touching an existing `.env`.
+
+## Manual deploy
+
+The steps `bootstrap.sh` automates, for reference or if you'd rather
+run them by hand.
+
+### First-time server access
 
 Don't operate the server as `root` day-to-day. Set up a dedicated
 non-root admin user with SSH-key-only access and passwordless `sudo`:
@@ -36,12 +74,13 @@ non-root admin user with SSH-key-only access and passwordless `sudo`:
 - [`setup-vps-user.sh`](setup-vps-user.sh) — the bootstrap script referenced
   by that guide.
 
-## Deploying
+### Deploying
 
-Once the admin user is set up and Docker is installed:
+Once the admin user is set up and Docker is installed, copy this
+checkout to the server (`rsync`, `scp`, or your own means — the
+repository doesn't have to be public), then on the server:
 
 ```bash
-git clone <this-repository> iotstack
 cd iotstack
 cp .env.example .env
 # edit .env — see README.md's Configuration section

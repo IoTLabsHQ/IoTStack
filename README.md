@@ -82,9 +82,15 @@ and its known limitations.
 
 ## Deployment
 
+Have a fresh VPS and SSH access? One command deploys the whole stack:
+
+```bash
+deploy/bootstrap.sh root@your-server-ip
+```
+
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for server requirements,
-prerequisites, and first-time server access (including a script to set up
-a non-root admin user with SSH-key-only login).
+what that command does, flags, and the manual steps if you'd rather run
+them by hand.
 
 ## Resource footprint
 

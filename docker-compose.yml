@@ -28,6 +28,7 @@ services:
     container_name: iotstack-api
     restart: unless-stopped
     environment:
+      NODE_ENV: production
       PORT: "3000"
       DB_PATH: /data/iotstack.db
       MOSQUITTO_HOST: mosquitto

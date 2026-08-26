@@ -925,19 +925,13 @@ Nếu đã có key riêng cho VPS này rồi thì không cần tạo lại.
 Copy key (dùng `-i` để chỉ đúng key vừa tạo):
 
 ```bash
-ssh-copy-id -i ~/.ssh/iotstack_ed25519.pub root@SERVER_IP
+ssh-copy-id -i ~/.ssh/iotstack_ed25519.pub iotstack@SERVER_IP
 ```
 
 Sau đó kiểm tra trên VPS:
 
 ```bash
-cat /root/.ssh/authorized_keys
-```
-
-Nếu đã có key, chạy:
-
-```bash
-/root/setup-vps-user.sh
+cat /home/iotstack/.ssh/authorized_keys
 ```
 
 Vì key không nằm ở đường dẫn mặc định, từ bước này trở đi khi SSH vào user mới cần chỉ định `-i`:
