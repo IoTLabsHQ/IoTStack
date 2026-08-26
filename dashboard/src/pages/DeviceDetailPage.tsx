@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
@@ -26,6 +26,7 @@ export function DeviceDetailPage() {
   const [cmdCommand, setCmdCommand] = useState<(typeof COMMANDS)[number]>("ping");
   const [cmdValue, setCmdValue] = useState("");
   const [cmdResult, setCmdResult] = useState<string | null>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
 
   const deviceQuery = useQuery({
     queryKey: ["device", deviceId],
@@ -41,6 +42,15 @@ export function DeviceDetailPage() {
     queryFn: () => getDeviceStorage(deviceId),
     refetchInterval: 5_000,
   });
+
+  // Messages are sorted newest-first, so the latest arrival is always at
+  // the top — keep it in view by scrolling back there whenever new ones
+  // come in via the 5s poll above.
+  useEffect(() => {
+    if (messagesScrollRef.current) {
+      messagesScrollRef.current.scrollTop = 0;
+    }
+  }, [messagesQuery.data?.messages]);
 
   const regenerateMutation = useMutation({
     mutationFn: () => regenerateDevice(deviceId),
@@ -118,14 +128,6 @@ export function DeviceDetailPage() {
               }}
             />
           </div>
-          <ArduinoCodeSection
-            credential={{
-              displayName: device.display_name,
-              clientId: device.client_id,
-              mqttUsername: device.mqtt_username,
-              password: regenerated,
-            }}
-          />
         </div>
       )}
 
@@ -201,28 +203,41 @@ export function DeviceDetailPage() {
         </form>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-900">Recent messages</h2>
-        {messagesQuery.data && messagesQuery.data.messages.length > 0 ? (
-          <ul className="divide-y divide-slate-100 text-sm">
-            {messagesQuery.data.messages.map((m) => (
-              <li key={m.id} className="py-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-slate-500">{m.topic}</span>
-                  <span className="text-xs text-slate-400">
-                    {new Date(m.received_at + "Z").toLocaleString()}
-                  </span>
-                </div>
-                <pre className="mt-1 overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs">
-                  {m.payload}
-                </pre>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-slate-500">No messages yet.</p>
-        )}
+        <div ref={messagesScrollRef} className="h-80 overflow-y-auto">
+          {messagesQuery.data && messagesQuery.data.messages.length > 0 ? (
+            <ul className="divide-y divide-slate-100 text-sm">
+              {messagesQuery.data.messages.map((m) => (
+                <li key={m.id} className="py-2">
+                  <div className="flex items-center gap-3">
+                    <span className="shrink-0 text-xs text-slate-400">
+                      {new Date(m.received_at + "Z").toLocaleString()}
+                    </span>
+                    <span className="truncate font-mono text-xs text-slate-500">{m.topic}</span>
+                  </div>
+                  <pre className="mt-1 overflow-x-auto rounded bg-slate-50 px-2 py-1 text-xs">
+                    {m.payload}
+                  </pre>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-500">No messages yet.</p>
+          )}
+        </div>
       </div>
+
+      {regenerated && (
+        <ArduinoCodeSection
+          credential={{
+            displayName: device.display_name,
+            clientId: device.client_id,
+            mqttUsername: device.mqtt_username,
+            password: regenerated,
+          }}
+        />
+      )}
     </Shell>
   );
 }

@@ -41,7 +41,17 @@ else
     log "Generating .env..."
 
     if [[ -z "${ADMIN_EMAIL}" ]]; then
-        read -r -p "Admin email for the dashboard: " ADMIN_EMAIL
+        # -t 0: has its own TTY (e.g. `ssh -t`). Otherwise (e.g. called
+        # from install.sh via a piped `curl | sh`, where stdin is the
+        # script itself) fall back to the controlling terminal directly.
+        if [[ -t 0 ]]; then
+            read -r -p "Admin email for the dashboard: " ADMIN_EMAIL
+        elif [[ -e /dev/tty ]]; then
+            read -r -p "Admin email for the dashboard: " ADMIN_EMAIL < /dev/tty
+        else
+            echo "No TTY available to ask for ADMIN_EMAIL — pass it as an env var instead." >&2
+            exit 1
+        fi
     fi
 
     if [[ -z "${ADMIN_PASSWORD}" ]]; then
