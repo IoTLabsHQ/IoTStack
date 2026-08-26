@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { createDevice, listDevices, type CreatedDevice } from "../lib/api/devices";
+import { CredentialActions } from "../components/CredentialActions";
+import { ArduinoCodeSection } from "../components/ArduinoCodeSection";
 
 function CreatedCredentialBanner({
   created,
@@ -24,12 +26,30 @@ function CreatedCredentialBanner({
         <dt className="text-amber-800">Password</dt>
         <dd className="font-mono text-amber-950">{created.password}</dd>
       </dl>
-      <button
-        onClick={onDismiss}
-        className="mt-3 rounded-md border border-amber-400 px-3 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
-      >
-        I've saved it
-      </button>
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={onDismiss}
+          className="rounded-md border border-amber-400 px-3 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
+        >
+          I've saved it
+        </button>
+        <CredentialActions
+          credential={{
+            displayName: created.device.displayName,
+            clientId: created.device.clientId,
+            mqttUsername: created.device.mqttUsername,
+            password: created.password,
+          }}
+        />
+      </div>
+      <ArduinoCodeSection
+        credential={{
+          displayName: created.device.displayName,
+          clientId: created.device.clientId,
+          mqttUsername: created.device.mqttUsername,
+          password: created.password,
+        }}
+      />
     </div>
   );
 }
@@ -89,6 +109,7 @@ export function DevicesPage() {
                 <th className="px-4 py-2 font-medium">Name</th>
                 <th className="px-4 py-2 font-medium">Client ID</th>
                 <th className="px-4 py-2 font-medium">Last seen</th>
+                <th className="px-4 py-2 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -102,6 +123,14 @@ export function DevicesPage() {
                   <td className="px-4 py-3 font-mono text-xs text-slate-600">{d.client_id}</td>
                   <td className="px-4 py-3 text-slate-500">
                     {d.last_seen_at ? new Date(d.last_seen_at + "Z").toLocaleString() : "never"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      to={`/devices/${d.id}`}
+                      className="rounded-md border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+                    >
+                      View
+                    </Link>
                   </td>
                 </tr>
               ))}

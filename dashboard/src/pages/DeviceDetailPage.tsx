@@ -10,6 +10,8 @@ import {
   regenerateDevice,
   sendCommand,
 } from "../lib/api/devices";
+import { CredentialActions } from "../components/CredentialActions";
+import { ArduinoCodeSection } from "../components/ArduinoCodeSection";
 
 const COMMANDS = ["ping", "set", "status.request", "config.update", "restart"] as const;
 
@@ -106,6 +108,24 @@ export function DeviceDetailPage() {
             New password — save it now, it won't be shown again:
           </p>
           <p className="font-mono text-sm text-amber-950">{regenerated}</p>
+          <div className="mt-3">
+            <CredentialActions
+              credential={{
+                displayName: device.display_name,
+                clientId: device.client_id,
+                mqttUsername: device.mqtt_username,
+                password: regenerated,
+              }}
+            />
+          </div>
+          <ArduinoCodeSection
+            credential={{
+              displayName: device.display_name,
+              clientId: device.client_id,
+              mqttUsername: device.mqtt_username,
+              password: regenerated,
+            }}
+          />
         </div>
       )}
 

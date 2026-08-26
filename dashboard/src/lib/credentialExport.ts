@@ -1,0 +1,38 @@
+export interface CredentialInfo {
+  displayName: string;
+  clientId: string;
+  mqttUsername: string;
+  password: string;
+}
+
+function csvEscape(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+export function buildCredentialText(c: CredentialInfo, host: string): string {
+  return [
+    `Device: ${c.displayName}`,
+    `Client ID: ${c.clientId}`,
+    `Username: ${c.mqttUsername}`,
+    `Password: ${c.password}`,
+    `Host: ${host}`,
+    `Port: 1883`,
+    `Publish topic: devices/${c.clientId}/telemetry`,
+    `Subscribe topic: devices/${c.clientId}/cmd`,
+  ].join("\n");
+}
+
+export function buildCredentialCsv(c: CredentialInfo, host: string): string {
+  const rows: [string, string][] = [
+    ["Device Name", c.displayName],
+    ["Client ID", c.clientId],
+    ["Username", c.mqttUsername],
+    ["Password", c.password],
+    ["Host", host],
+    ["Port", "1883"],
+    ["Publish Topic", `devices/${c.clientId}/telemetry`],
+    ["Subscribe Topic", `devices/${c.clientId}/cmd`],
+    ["Generated At", new Date().toISOString()],
+  ];
+  return ["Field,Value", ...rows.map(([f, v]) => `${csvEscape(f)},${csvEscape(v)}`)].join("\n");
+}
