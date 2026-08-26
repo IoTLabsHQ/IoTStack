@@ -147,6 +147,16 @@ export function DeviceDetailPage() {
         </dl>
       </div>
 
+      <ArduinoCodeSection
+        credential={{
+          displayName: device.display_name,
+          clientId: device.client_id,
+          mqttUsername: device.mqtt_username,
+          password: regenerated ?? "YOUR_DEVICE_PASSWORD",
+        }}
+        hasRealPassword={!!regenerated}
+      />
+
       <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="mb-3 text-sm font-semibold text-slate-900">Send a command</h2>
         <form
@@ -228,16 +238,6 @@ export function DeviceDetailPage() {
         </div>
       </div>
 
-      {regenerated && (
-        <ArduinoCodeSection
-          credential={{
-            displayName: device.display_name,
-            clientId: device.client_id,
-            mqttUsername: device.mqtt_username,
-            password: regenerated,
-          }}
-        />
-      )}
     </Shell>
   );
 }
