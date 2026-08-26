@@ -34,9 +34,14 @@ fi
 # volume and writes a listener snippet under conf.d, then reloads if the
 # broker is already running.
 #
-# This only takes effect once DOMAIN is set and Caddy has actually finished
-# an ACME issuance — until then mosquitto just runs without 8883, no error.
+# This only takes effect once a domain is set (from the dashboard's
+# Settings page — see DOMAIN_FILE below) and Caddy has actually finished an
+# ACME issuance for it — until then mosquitto just runs without 8883, no
+# error.
+DOMAIN_FILE=/settings-shared/domain.txt
+
 sync_tls_cert() {
+	DOMAIN=$(cat "$DOMAIN_FILE" 2>/dev/null || true)
 	[ -z "$DOMAIN" ] && return 0
 
 	src_dir="/certs/caddy/certificates/acme-v02.api.letsencrypt.org-directory/$DOMAIN"
@@ -109,12 +114,14 @@ fi
 
 sync_tls_cert
 
-# Caddy renews the certificate automatically, but mosquitto has no way to
-# notice on its own — re-check periodically for a renewed (changed) cert
-# and reload when one shows up.
+# Caddy renews the certificate automatically, and the domain itself can
+# change anytime from the dashboard — mosquitto has no way to be notified
+# of either on its own, so re-check periodically. 30s is cheap (just a
+# stat+cmp) and is now the real "how fast does 8883 pick up a new domain"
+# knob.
 (
 	while true; do
-		sleep 21600 # 6h
+		sleep 30
 		sync_tls_cert
 	done
 ) &

@@ -18,8 +18,11 @@ for a device, and start coding.
   cap apply to every device (configurable), old messages expire
   automatically, and the whole stack is designed to run comfortably on a
   1-2 CPU / 2 GB RAM VPS.
-- **Automatic HTTPS** — point a domain at your server, set it in `.env`,
-  and the dashboard gets a real certificate with no manual steps.
+- **Works over your server's IP out of the box** — plain HTTP, no domain
+  or TLS setup required to get started.
+- **Automatic HTTPS, whenever you want it** — add a domain anytime from
+  the dashboard's Settings page (or change it again later, no limit) and
+  it gets a real certificate live, with no restart.
 
 ## Quick start
 
@@ -32,10 +35,11 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open `http://<your-server>` (or `https://your-domain` once `DOMAIN` is set
-in `.env`), log in with the admin account you configured, and create your
-first device. The dashboard shows the exact host/port and credential to put
-in your firmware.
+Open `http://<your-server-ip>`, log in with the admin account you
+configured, and create your first device. Add a domain anytime from the
+dashboard's Settings page to get `https://your-domain` with a real
+certificate — no `.env` edit, no restart. The dashboard shows the exact
+host/port and credential to put in your firmware.
 
 ## Connecting a device
 
@@ -51,7 +55,7 @@ Example (plain MQTT, port 1883):
 
 ```
 Host:     your-server-or-domain
-Port:     1883 (plain), 8883 (TLS, once DOMAIN is configured), 9001 (WebSocket)
+Port:     1883 (plain), 8883 (TLS, once a domain is set from Settings), 9001 (WebSocket)
 Username: <shown in dashboard>
 Password: <shown in dashboard>
 Publish:  devices/<client_id>/telemetry
@@ -69,7 +73,7 @@ for the full list with comments. The important ones:
 | Variable | What it controls |
 |---|---|
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Dashboard login, seeded once on first boot |
-| `DOMAIN` | Your server's hostname — set this to get automatic HTTPS |
+| `DOMAIN` | Optional first-boot convenience only — sets the initial domain. Change it anytime after that from the dashboard's Settings page instead; `.env` is never re-read for this. |
 | `RATE_LIMIT_MSG_PER_MIN` | Messages/minute allowed per device |
 | `STORAGE_CAP_MB` | Stored message data allowed per device |
 | `RAW_RETENTION_DAYS` | How long messages are kept before automatic deletion |

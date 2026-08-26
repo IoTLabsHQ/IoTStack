@@ -85,13 +85,13 @@ sudo docker compose up -d --build
 
 log "Waiting for the API to report healthy..."
 
-HEALTH_URL="https://localhost/api/health"
+HEALTH_URL="http://localhost/api/health"
 ATTEMPTS=30
 OK=false
 
 for ((i = 1; i <= ATTEMPTS; i++)); do
 
-    if curl -ks -o /dev/null -w "%{http_code}" "${HEALTH_URL}" | grep -q "^200$"; then
+    if curl -s -o /dev/null -w "%{http_code}" "${HEALTH_URL}" | grep -q "^200$"; then
         OK=true
         break
     fi
@@ -118,9 +118,9 @@ log "================================================"
 log "IoTStack is running."
 
 if [[ -n "${DOMAIN}" ]]; then
-    log "Dashboard: https://${DOMAIN}"
+    log "Dashboard: https://${DOMAIN}  (HTTPS activates automatically once DNS points here)"
 else
-    log "Dashboard: https://<this server's IP>  (self-signed cert until DOMAIN is set)"
+    log "Dashboard: http://<this server's IP> — set a domain later from the dashboard's Settings page to enable HTTPS"
 fi
 
 if [[ "${GENERATED_PASSWORD:-false}" == "true" ]]; then

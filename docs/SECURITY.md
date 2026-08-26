@@ -76,19 +76,46 @@ structurally rather than requiring careful application-level locking.
 
 ## Transport security
 
-- **Dashboard/API**: HTTPS via Caddy, automatic (Let's Encrypt) once
-  `DOMAIN` is set. HTTP requests are redirected to HTTPS.
+- **Dashboard/API is reachable over plain HTTP on the server's IP,
+  unconditionally.** Caddy's `:80` site block has no domain/SNI matching
+  involved at all, so this never depends on any configuration being
+  correct — it's the guaranteed fallback.
+- **A domain is optional and dashboard-managed**, not `.env`-managed.
+  Setting or changing it (Settings page → `PUT /settings/domain`) writes
+  it to SQLite, then `api` pushes Caddy's *entire* live config to it via
+  `POST http://caddy:2019/load` (Caddy's admin API) — a full hot-swap of
+  the running config, no restart. Caddy's admin API is bound to
+  `0.0.0.0:2019` so `api` can reach it over the docker network, but it is
+  **never published to the host** — nothing outside these three
+  containers can reach it. Automatic HTTPS (Let's Encrypt) then applies
+  to the new domain the normal way.
 - **MQTT**: plain (1883) and WebSocket (9001) are always available; MQTTS
-  (8883) activates automatically once a certificate for `DOMAIN` exists.
-  Mosquitto and Caddy share the same certificate (obtained by Caddy,
-  synced into Mosquitto's volume) rather than running two separate ACME
-  clients. Mosquitto doesn't hot-reload a renewed certificate on its own,
-  so a background check every 6 hours picks up renewals and reloads the
-  broker — a well-configured production instance sees a certificate
-  refresh land within a few hours of Caddy renewing it, not instantly.
-  This is documented rather than promised as zero-downtime, because it
-  isn't quite that — a broker reload is sub-second, not literally
-  invisible.
+  (8883) activates once a certificate for the currently-configured domain
+  exists. Mosquitto has no HTTP server of its own to query `api` for the
+  current domain, so `api` writes it to a small file on a volume shared
+  with mosquitto (`/settings-shared/domain.txt`) every time it changes (and
+  again on every `api` boot, as a self-heal); mosquitto polls that file
+  every 30 seconds. Mosquitto and Caddy share the same certificate
+  (obtained by Caddy, synced into Mosquitto's volume) rather than running
+  two separate ACME clients, and doesn't hot-reload it on its own, so
+  that same 30-second poll also picks up certificate renewals — a
+  well-configured instance sees a refresh land within half a minute, not
+  instantly. Documented rather than promised as zero-downtime, because a
+  broker reload is sub-second, not literally invisible.
+
+## Email (SMTP)
+
+Optional, off by default. The dashboard's Settings page accepts SMTP
+credentials, but they are only ever saved once the server has opened a
+real connection and verified them — a failed attempt never touches the
+previously-saved (working) configuration, so the feature can't silently
+end up "configured but broken." The SMTP password is stored in SQLite
+in the same trust boundary as every other secret in this project
+(`DYNSEC_CONTROLLER_PASSWORD` in `.env`, device credentials inside
+Mosquitto's own store) — readable only by whoever can read the server's
+filesystem, which is already "game over" for a single-operator instance.
+It is never returned by any API response; re-saving SMTP settings always
+requires re-entering the password.
 
 ## Startup safety
 
@@ -123,9 +150,9 @@ Documented rather than hidden, in the spirit of not overclaiming:
   right move is a bigger VPS or migrating to a dedicated multi-tenant IoT
   platform — not clustering this project's broker, which isn't designed
   for that.
-- **Certificate reload isn't instant.** See the transport security section
-  above — a renewed MQTTS certificate can take up to 6 hours to be picked
-  up by Mosquitto.
+- **Certificate/domain reload isn't instant.** See the transport security
+  section above — a renewed or changed MQTTS certificate can take up to
+  30 seconds to be picked up by Mosquitto.
 
 ## Reporting a vulnerability
 

@@ -3,7 +3,7 @@
 ## Overview
 
 ```
-Browser/ESP32 ──HTTPS/WSS──► Caddy (automatic HTTPS, reverse proxy)
+Browser/ESP32 ──HTTP (or HTTPS once a domain is set)──► Caddy (reverse proxy)
                                  ├─► dashboard (static SPA, built in)
                                  └─► api:3000 (REST, /api/*)
 
@@ -30,7 +30,12 @@ Three containers:
   3. Subscribes to `devices/#` as a message collector, persisting messages
      to SQLite and enforcing the rate limit and storage cap.
 - **caddy** — reverse proxy and static file server for the dashboard.
-  Handles automatic HTTPS (Let's Encrypt) once a domain is configured.
+  Always serves plain HTTP on `:80` — no domain, no TLS/SNI involved,
+  so IP access is unconditional. `api` can push a domain-specific HTTPS
+  site block onto it live via Caddy's admin API (`POST /load`, a full
+  config hot-swap, no restart) whenever the dashboard's Settings page
+  sets or changes a domain. Automatic HTTPS (Let's Encrypt) applies to
+  that domain the normal way once pushed.
 
 Everything is single-instance by design — this targets one maker running
 one broker for their own devices, not a multi-tenant deployment. That
@@ -101,7 +106,7 @@ periodic job instead.
 
 ## Data model
 
-Single SQLite file (`better-sqlite3`, WAL mode). Four tables:
+Single SQLite file (`better-sqlite3`, WAL mode). Five tables:
 
 - `admin_users` — the single dashboard account, seeded from `ADMIN_EMAIL`/
   `ADMIN_PASSWORD` on first boot if the table is empty. Password stored as
@@ -117,6 +122,10 @@ Single SQLite file (`better-sqlite3`, WAL mode). Four tables:
 - `storage_usage` — one row per device, a running byte counter, seeded to
   zero at device creation so the atomic cap check always has a row to
   match against.
+- `settings` — a single row (`id = 1`): the current domain (empty by
+  default), and SMTP config with `smtp_verified_at` — non-null only once
+  a real connection test has succeeded, which is what "SMTP is active"
+  actually means (see [`SECURITY.md`](SECURITY.md)).
 
 ## Why these choices instead of the more common alternatives
 

@@ -24,6 +24,35 @@ export function optionalString(value: unknown, fieldName: string): string | unde
   return value;
 }
 
+export function requireInt(
+  value: unknown,
+  fieldName: string,
+  opts: { min?: number; max?: number } = {},
+): number {
+  const n = typeof value === "number" ? value : NaN;
+  if (!Number.isInteger(n)) {
+    throw new ValidationError(`${fieldName} must be an integer`);
+  }
+  if (opts.min !== undefined && n < opts.min) {
+    throw new ValidationError(`${fieldName} must be >= ${opts.min}`);
+  }
+  if (opts.max !== undefined && n > opts.max) {
+    throw new ValidationError(`${fieldName} must be <= ${opts.max}`);
+  }
+  return n;
+}
+
+const HOSTNAME_RE =
+  /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+/** Empty string is always valid — it means "no domain, IP-only access". */
+export function validateDomain(value: string): void {
+  if (value === "") return;
+  if (value.length > 253 || !HOSTNAME_RE.test(value)) {
+    throw new ValidationError("domain must be a valid hostname");
+  }
+}
+
 /** Returns true (and has already responded 400) if err was a ValidationError. */
 export function respondIfValidationError(err: unknown, res: Response): boolean {
   if (err instanceof ValidationError) {

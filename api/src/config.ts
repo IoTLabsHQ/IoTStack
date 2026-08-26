@@ -22,6 +22,18 @@ export const config = {
 
   sessionSecret: process.env.SESSION_SECRET ?? "",
 
+  domain: process.env.DOMAIN ?? "",
+
+  settingsShared: {
+    domainFile: process.env.DOMAIN_FILE_PATH ?? "/settings-shared/domain.txt",
+  },
+
+  caddy: {
+    adminUrl: process.env.CADDY_ADMIN_URL ?? "http://caddy:2019",
+    host: process.env.CADDY_HOST ?? "caddy",
+    httpsPort: parseInt(process.env.CADDY_HTTPS_PORT ?? "443", 10),
+  },
+
   limits: {
     rateLimitMsgPerMin: parseInt(process.env.RATE_LIMIT_MSG_PER_MIN ?? "60", 10),
     storageCapMB: parseInt(process.env.STORAGE_CAP_MB ?? "500", 10),

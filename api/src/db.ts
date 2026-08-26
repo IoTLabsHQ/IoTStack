@@ -41,6 +41,18 @@ CREATE TABLE IF NOT EXISTS storage_usage (
   device_id INTEGER PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
   bytes INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  domain TEXT NOT NULL DEFAULT '',
+  smtp_host TEXT,
+  smtp_port INTEGER,
+  smtp_user TEXT,
+  smtp_password TEXT,
+  smtp_from TEXT,
+  smtp_verified_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 export function getDb(): Database.Database {
@@ -75,4 +87,30 @@ export function seedAdmin(): void {
     .prepare("INSERT INTO admin_users (email, password_hash) VALUES (?, ?)")
     .run(config.admin.email, passwordHash);
   logger.info(`seeded admin account: ${config.admin.email}`);
+}
+
+/** Seeds the single settings row from env vars, once, on first boot. */
+export function seedSettings(): void {
+  const database = getDb();
+  const existing = database.prepare("SELECT id FROM settings WHERE id = 1").get();
+  if (existing) return;
+
+  database.prepare("INSERT INTO settings (id, domain) VALUES (1, ?)").run(config.domain);
+  logger.info(`seeded settings row (domain=${config.domain || "<none>"})`);
+}
+
+export interface SettingsRow {
+  id: number;
+  domain: string;
+  smtp_host: string | null;
+  smtp_port: number | null;
+  smtp_user: string | null;
+  smtp_password: string | null;
+  smtp_from: string | null;
+  smtp_verified_at: string | null;
+  updated_at: string;
+}
+
+export function getSettingsRow(): SettingsRow {
+  return getDb().prepare("SELECT * FROM settings WHERE id = 1").get() as SettingsRow;
 }

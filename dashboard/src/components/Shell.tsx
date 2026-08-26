@@ -6,6 +6,7 @@ import { logout } from "../lib/api/auth";
 const navItems = [
   { to: "/", label: "Overview" },
   { to: "/devices", label: "Devices" },
+  { to: "/settings", label: "Settings" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {

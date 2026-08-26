@@ -1,10 +1,17 @@
 {
-	# No block needed here — Caddy decides HTTP-vs-HTTPS per site address
-	# below. Set DOMAIN in .env to a real hostname pointed at this server
-	# to get automatic Let's Encrypt HTTPS; leave it unset for local HTTP.
+	# Admin API bound to all interfaces so the api service can reach it
+	# over the docker network (as caddy:2019) to push a new domain live.
+	# Never published to the host — only other containers can reach it.
+	# `origins` is required explicitly: binding to 0.0.0.0 means Caddy
+	# can't infer an allowed origin on its own, so requests get a 403
+	# ("client is not allowed to access from origin ''") without this —
+	# confirmed by real testing, not a hypothetical.
+	admin 0.0.0.0:2019 {
+		origins caddy:2019
+	}
 }
 
-{$DOMAIN:localhost} {
+(iotstack_handlers) {
 	handle /api/* {
 		uri strip_prefix /api
 		reverse_proxy api:3000
@@ -15,4 +22,12 @@
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+# Always-on plain HTTP on the server's IP — no domain, no TLS, no SNI
+# involved, so this never breaks regardless of domain configuration.
+# A domain-specific HTTPS site block is pushed here live by the api
+# service (POST /load) once one is set from the dashboard.
+:80 {
+	import iotstack_handlers
 }

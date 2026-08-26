@@ -4,6 +4,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { DevicesPage } from "./pages/DevicesPage";
 import { DeviceDetailPage } from "./pages/DeviceDetailPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 function protectedRoute(element: React.ReactNode) {
   return <RequireAuth>{element}</RequireAuth>;
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
   { path: "/", element: protectedRoute(<OverviewPage />) },
   { path: "/devices", element: protectedRoute(<DevicesPage />) },
   { path: "/devices/:id", element: protectedRoute(<DeviceDetailPage />) },
+  { path: "/settings", element: protectedRoute(<SettingsPage />) },
 ]);
 
 export function App() {

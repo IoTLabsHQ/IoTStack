@@ -23,7 +23,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package.json ./
 
-RUN chown -R node:node /app && mkdir -p /data && chown -R node:node /data
+RUN chown -R node:node /app && mkdir -p /data /settings-shared && chown -R node:node /data /settings-shared
 USER node
 
 EXPOSE 3000
