@@ -1,0 +1,18 @@
+{
+	# No block needed here — Caddy decides HTTP-vs-HTTPS per site address
+	# below. Set DOMAIN in .env to a real hostname pointed at this server
+	# to get automatic Let's Encrypt HTTPS; leave it unset for local HTTP.
+}
+
+{$DOMAIN:localhost} {
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv/dashboard
+		try_files {path} /index.html
+		file_server
+	}
+}

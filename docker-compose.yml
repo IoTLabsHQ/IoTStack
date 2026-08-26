@@ -1,0 +1,80 @@
+services:
+  mosquitto:
+    build:
+      context: ./mosquitto
+    container_name: iotstack-mosquitto
+    restart: unless-stopped
+    environment:
+      DYNSEC_CONTROLLER_USERNAME: ${DYNSEC_CONTROLLER_USERNAME:-iotstack_controller}
+      DYNSEC_CONTROLLER_PASSWORD: ${DYNSEC_CONTROLLER_PASSWORD:-changeme_generate_a_real_secret}
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+      - mosquitto_conf.d:/mosquitto/conf.d
+      - caddy_data:/certs:ro
+    mem_limit: 128m
+    networks:
+      - iotstack
+
+  api:
+    build:
+      context: ./api
+    container_name: iotstack-api
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      DB_PATH: /data/iotstack.db
+      MOSQUITTO_HOST: mosquitto
+      MOSQUITTO_PORT: "1883"
+      DYNSEC_CONTROLLER_USERNAME: ${DYNSEC_CONTROLLER_USERNAME:-iotstack_controller}
+      DYNSEC_CONTROLLER_PASSWORD: ${DYNSEC_CONTROLLER_PASSWORD:-changeme_generate_a_real_secret}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      SESSION_SECRET: ${SESSION_SECRET:-changeme_generate_a_real_secret}
+      RATE_LIMIT_MSG_PER_MIN: ${RATE_LIMIT_MSG_PER_MIN:-60}
+      STORAGE_CAP_MB: ${STORAGE_CAP_MB:-500}
+      RAW_RETENTION_DAYS: ${RAW_RETENTION_DAYS:-14}
+    volumes:
+      - api_data:/data
+    depends_on:
+      - mosquitto
+    mem_limit: 256m
+    networks:
+      - iotstack
+
+  caddy:
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
+    container_name: iotstack-caddy
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    mem_limit: 128m
+    networks:
+      - iotstack
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  mosquitto_conf.d:
+  api_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  iotstack:

@@ -1,0 +1,7 @@
+.env
+node_modules/
+api/dist/
+dashboard/dist/
+*.db
+*.db-journal
+*.log
