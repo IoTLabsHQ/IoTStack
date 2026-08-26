@@ -46,13 +46,17 @@ else
         # script itself) fall back to the controlling terminal directly.
         if [[ -t 0 ]]; then
             read -r -p "Admin email for the dashboard: " ADMIN_EMAIL
-        elif [[ -e /dev/tty ]]; then
-            read -r -p "Admin email for the dashboard: " ADMIN_EMAIL < /dev/tty
+        elif read -r -p "Admin email for the dashboard: " ADMIN_EMAIL < /dev/tty 2>/dev/null; then
+            :
         else
-            # No TTY to prompt on (e.g. a non-interactive `ssh host cmd`) —
-            # fall back to a known placeholder instead of failing outright.
-            # Every other secret is still auto-generated and printed below,
-            # so the deploy still ends with real, usable credentials.
+            # No usable TTY to prompt on — /dev/tty can exist as a path
+            # (e.g. inside a plain non-`ssh -t` exec) while still failing
+            # to open with "No such device or address", so the read above
+            # is the real test, not just checking the path exists. Fall
+            # back to a known placeholder instead of failing outright.
+            # Every other secret is still auto-generated and printed
+            # below, so the deploy still ends with real, usable
+            # credentials.
             ADMIN_EMAIL="iotstack@example.com"
             log "No TTY available to ask for ADMIN_EMAIL — defaulting to ${ADMIN_EMAIL}."
         fi
