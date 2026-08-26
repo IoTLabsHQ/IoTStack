@@ -49,8 +49,12 @@ else
         elif [[ -e /dev/tty ]]; then
             read -r -p "Admin email for the dashboard: " ADMIN_EMAIL < /dev/tty
         else
-            echo "No TTY available to ask for ADMIN_EMAIL — pass it as an env var instead." >&2
-            exit 1
+            # No TTY to prompt on (e.g. a non-interactive `ssh host cmd`) —
+            # fall back to a known placeholder instead of failing outright.
+            # Every other secret is still auto-generated and printed below,
+            # so the deploy still ends with real, usable credentials.
+            ADMIN_EMAIL="iotstack@example.com"
+            log "No TTY available to ask for ADMIN_EMAIL — defaulting to ${ADMIN_EMAIL}."
         fi
     fi
 
