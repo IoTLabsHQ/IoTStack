@@ -80,6 +80,12 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit
 together, and [`docs/SECURITY.md`](docs/SECURITY.md) for the security model
 and its known limitations.
 
+## Deployment
+
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for server requirements,
+prerequisites, and first-time server access (including a script to set up
+a non-root admin user with SSH-key-only login).
+
 ## Resource footprint
 
 Three containers, roughly 150-300 MB combined RAM at idle: Mosquitto, a
