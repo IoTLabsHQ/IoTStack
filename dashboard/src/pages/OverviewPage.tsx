@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { getOverview } from "../lib/api/stats";
+import { getLiveResources, getThresholds } from "../lib/api/resources";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -17,6 +19,56 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function pct(used: number, total: number): number {
+  if (!total) return 0;
+  return (used / total) * 100;
+}
+
+function ResourceWarningBanner() {
+  const liveQuery = useQuery({
+    queryKey: ["resources-live"],
+    queryFn: getLiveResources,
+    refetchInterval: 30_000,
+  });
+  const thresholdsQuery = useQuery({ queryKey: ["resource-thresholds"], queryFn: getThresholds });
+
+  const host = liveQuery.data?.host;
+  const thresholds = thresholdsQuery.data;
+  if (!host || !thresholds) return null;
+
+  const cpuPct = host.cpuPct;
+  const memPct = pct(host.memUsedBytes, host.memTotalBytes);
+  const diskPct = host.disks[0] ? pct(host.disks[0].usedBytes, host.disks[0].totalBytes) : 0;
+
+  const worstIsCritical =
+    cpuPct >= thresholds.host_cpu_critical_pct ||
+    memPct >= thresholds.host_ram_critical_pct ||
+    diskPct >= thresholds.host_disk_critical_pct;
+  const worstIsWarn =
+    cpuPct >= thresholds.host_cpu_warn_pct ||
+    memPct >= thresholds.host_ram_warn_pct ||
+    diskPct >= thresholds.host_disk_warn_pct;
+
+  if (!worstIsWarn && !worstIsCritical) return null;
+
+  const boxClass = worstIsCritical
+    ? "border-red-300 bg-red-50 text-red-800"
+    : "border-amber-300 bg-amber-50 text-amber-900";
+
+  return (
+    <div className={`mb-6 rounded-lg border p-4 ${boxClass}`}>
+      <p className="text-sm">
+        {worstIsCritical ? "Your VPS is close to its limits" : "Your VPS is getting busy"} — CPU{" "}
+        {cpuPct.toFixed(0)}%, RAM {memPct.toFixed(0)}%, disk {diskPct.toFixed(0)}%. Check{" "}
+        <Link to="/resources" className="underline font-medium">
+          Resources
+        </Link>{" "}
+        for details, or consider upgrading your VPS.
+      </p>
+    </div>
+  );
+}
+
 export function OverviewPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["overview"],
@@ -27,6 +79,8 @@ export function OverviewPage() {
   return (
     <Shell>
       <h1 className="mb-6 text-lg font-semibold text-slate-900">Overview</h1>
+
+      <ResourceWarningBanner />
 
       {isLoading || !data ? (
         <p className="text-sm text-slate-500">Loading…</p>

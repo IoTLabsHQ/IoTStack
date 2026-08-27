@@ -217,12 +217,20 @@ fi
 
 
 # ============================================================
-# Step 6 — install Docker (idempotent) and deploy
+# Step 6 — install Docker (idempotent), build + install the
+# resource-monitoring agent (must be running before `docker
+# compose up`, so its socket exists for the api container to
+# bind-mount), then deploy
 # ============================================================
 
-chmod +x "${APP_DIR}/deploy/install-docker.sh" "${APP_DIR}/deploy/deploy-app.sh"
+chmod +x "${APP_DIR}/deploy/install-docker.sh" "${APP_DIR}/deploy/build-agent.sh" \
+    "${APP_DIR}/deploy/install-agent.sh" "${APP_DIR}/deploy/deploy-app.sh"
 
 "${APP_DIR}/deploy/install-docker.sh"
+
+"${APP_DIR}/deploy/build-agent.sh"
+
+"${APP_DIR}/deploy/install-agent.sh"
 
 DOMAIN="${DOMAIN}" ADMIN_EMAIL="${ADMIN_EMAIL}" "${APP_DIR}/deploy/deploy-app.sh"
 

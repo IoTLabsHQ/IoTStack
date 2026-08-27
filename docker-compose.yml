@@ -41,10 +41,12 @@ services:
       RATE_LIMIT_MSG_PER_MIN: ${RATE_LIMIT_MSG_PER_MIN:-60}
       STORAGE_CAP_MB: ${STORAGE_CAP_MB:-500}
       RAW_RETENTION_DAYS: ${RAW_RETENTION_DAYS:-14}
+      RESOURCE_POLL_INTERVAL_SECONDS: ${RESOURCE_POLL_INTERVAL_SECONDS:-30}
       DOMAIN: ${DOMAIN:-}
     volumes:
       - api_data:/data
       - iotstack_settings:/settings-shared
+      - /run/iotstack-agent/agent.sock:/run/iotstack-agent.sock
     depends_on:
       - mosquitto
     mem_limit: 256m

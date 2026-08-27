@@ -26,6 +26,11 @@ export const DOC_GROUPS = [
         num: "004",
         title: { en: "VPS admin user setup", vi: "Tạo user quản trị VPS" },
       },
+      {
+        slug: "resource-monitoring",
+        num: "005",
+        title: { en: "Resource monitoring", vi: "Theo dõi tài nguyên" },
+      },
     ],
   },
   {

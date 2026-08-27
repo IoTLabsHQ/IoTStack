@@ -53,6 +53,55 @@ CREATE TABLE IF NOT EXISTS settings (
   smtp_verified_at TEXT,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- target: 'host', 'disk:<mount>', or an iotstack-* container name.
+-- cpu_pct is null for disk targets; used_bytes/total_bytes hold mem
+-- used/total (host+containers) or disk used/total (disk targets).
+CREATE TABLE IF NOT EXISTS resource_samples_raw (
+  id INTEGER PRIMARY KEY,
+  target TEXT NOT NULL,
+  sampled_at TEXT NOT NULL DEFAULT (datetime('now')),
+  cpu_pct REAL,
+  used_bytes INTEGER,
+  total_bytes INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_resource_samples_raw_target_time
+  ON resource_samples_raw(target, sampled_at DESC);
+
+CREATE TABLE IF NOT EXISTS resource_samples_hourly (
+  target TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  avg_cpu_pct REAL,
+  max_cpu_pct REAL,
+  avg_used_bytes INTEGER,
+  max_used_bytes INTEGER,
+  total_bytes INTEGER,
+  PRIMARY KEY (target, bucket)
+);
+
+CREATE TABLE IF NOT EXISTS resource_samples_daily (
+  target TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  avg_cpu_pct REAL,
+  max_cpu_pct REAL,
+  avg_used_bytes INTEGER,
+  max_used_bytes INTEGER,
+  total_bytes INTEGER,
+  PRIMARY KEY (target, bucket)
+);
+
+CREATE TABLE IF NOT EXISTS resource_thresholds (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  host_ram_warn_pct INTEGER NOT NULL DEFAULT 70,
+  host_ram_critical_pct INTEGER NOT NULL DEFAULT 85,
+  host_cpu_warn_pct INTEGER NOT NULL DEFAULT 70,
+  host_cpu_critical_pct INTEGER NOT NULL DEFAULT 90,
+  host_disk_warn_pct INTEGER NOT NULL DEFAULT 80,
+  host_disk_critical_pct INTEGER NOT NULL DEFAULT 90,
+  container_mem_warn_pct INTEGER NOT NULL DEFAULT 80,
+  container_mem_critical_pct INTEGER NOT NULL DEFAULT 95,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 export function getDb(): Database.Database {
@@ -113,4 +162,33 @@ export interface SettingsRow {
 
 export function getSettingsRow(): SettingsRow {
   return getDb().prepare("SELECT * FROM settings WHERE id = 1").get() as SettingsRow;
+}
+
+export interface ResourceThresholdsRow {
+  id: number;
+  host_ram_warn_pct: number;
+  host_ram_critical_pct: number;
+  host_cpu_warn_pct: number;
+  host_cpu_critical_pct: number;
+  host_disk_warn_pct: number;
+  host_disk_critical_pct: number;
+  container_mem_warn_pct: number;
+  container_mem_critical_pct: number;
+  updated_at: string;
+}
+
+/** Seeds the resource-thresholds row with defaults, once, on first boot. */
+export function seedResourceThresholds(): void {
+  const database = getDb();
+  const existing = database.prepare("SELECT id FROM resource_thresholds WHERE id = 1").get();
+  if (existing) return;
+
+  database.prepare("INSERT INTO resource_thresholds (id) VALUES (1)").run();
+  logger.info("seeded resource_thresholds row with defaults");
+}
+
+export function getResourceThresholdsRow(): ResourceThresholdsRow {
+  return getDb()
+    .prepare("SELECT * FROM resource_thresholds WHERE id = 1")
+    .get() as ResourceThresholdsRow;
 }

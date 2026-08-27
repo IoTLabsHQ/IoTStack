@@ -102,6 +102,22 @@ structurally rather than requiring careful application-level locking.
   well-configured instance sees a refresh land within half a minute, not
   instantly. Documented rather than promised as zero-downtime, because a
   broker reload is sub-second, not literally invisible.
+- **The resource-monitoring agent** (`iotstack-agent`, a separate process
+  on the VPS host — see [Architecture](001_architecture.en.md#resource-monitoring))
+  is reached by `api` over a unix socket — the agent listens at
+  `/run/iotstack-agent/agent.sock` on the host (a systemd
+  `RuntimeDirectory`, since the host's own `/run` is root-owned and the
+  agent runs as a dedicated non-root user), bind-mounted to
+  `/run/iotstack-agent.sock` inside only the `api` container.
+  The socket is world-connectable (`0666`) rather than restricted to a
+  matching uid, because it only ever serves read-only, non-secret usage
+  numbers — no credentials, no control operations — and is unreachable
+  outside this host's own filesystem namespace to begin with. This was
+  chosen over a TCP port specifically to avoid the network-exposure
+  question a loopback/host-gateway approach would raise, and over
+  bind-mounting `/proc`/`/sys` into `api` directly, which would have
+  widened that one container's own access far more than a single socket
+  file does.
 
 ## Email (SMTP)
 
