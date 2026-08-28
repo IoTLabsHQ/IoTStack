@@ -204,7 +204,7 @@ devicesRouter.get("/:id/messages", (req, res) => {
   const messages = getDb()
     .prepare(
       `SELECT id, topic, message_type, payload, payload_bytes, received_at
-       FROM messages WHERE device_id = ? ORDER BY received_at DESC LIMIT ?`,
+       FROM messages WHERE device_id = ? ORDER BY received_at DESC, id DESC LIMIT ?`,
     )
     .all(device.id, limit);
   res.json({ messages });
