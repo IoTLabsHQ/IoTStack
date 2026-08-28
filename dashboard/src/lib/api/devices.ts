@@ -1,4 +1,5 @@
 import { apiFetch } from "./client";
+import type { Control } from "./control";
 
 export interface Device {
   id: number;
@@ -8,6 +9,7 @@ export interface Device {
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;
+  dashboard: Control[];
 }
 
 export interface Message {
@@ -47,8 +49,11 @@ export function deleteDevice(id: number): Promise<{ ok: boolean }> {
   return apiFetch(`/devices/${id}`, { method: "DELETE" });
 }
 
-export function getDeviceMessages(id: number): Promise<{ messages: Message[] }> {
-  return apiFetch(`/devices/${id}/messages`);
+export function getDeviceMessages(
+  id: number,
+  limit?: number,
+): Promise<{ messages: Message[] }> {
+  return apiFetch(`/devices/${id}/messages${limit ? `?limit=${limit}` : ""}`);
 }
 
 export function getDeviceStorage(id: number): Promise<{ bytes: number }> {

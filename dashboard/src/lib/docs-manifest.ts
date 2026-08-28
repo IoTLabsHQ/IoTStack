@@ -31,6 +31,11 @@ export const DOC_GROUPS = [
         num: "005",
         title: { en: "Resource monitoring", vi: "Theo dõi tài nguyên" },
       },
+      {
+        slug: "control-panels",
+        num: "006",
+        title: { en: "Control panels", vi: "Control Panel" },
+      },
     ],
   },
   {

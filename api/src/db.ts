@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS devices (
   display_name TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  last_seen_at TEXT
+  last_seen_at TEXT,
+  dashboard TEXT
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -113,8 +114,21 @@ export function getDb(): Database.Database {
   return db;
 }
 
+function columnExists(table: string, column: string): boolean {
+  const cols = getDb().prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return cols.some((c) => c.name === column);
+}
+
 export function runMigrations(): void {
   getDb().exec(MIGRATIONS);
+
+  // Additive column for instances provisioned before the dashboard column
+  // existed — CREATE TABLE IF NOT EXISTS above is a no-op against those.
+  if (!columnExists("devices", "dashboard")) {
+    getDb().exec(`ALTER TABLE devices ADD COLUMN dashboard TEXT`);
+    logger.info('migration: added "dashboard" column to devices table');
+  }
+
   logger.info("database migrations applied");
 }
 

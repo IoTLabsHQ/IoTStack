@@ -6,6 +6,8 @@ import { DevicesPage } from "./pages/DevicesPage";
 import { DeviceDetailPage } from "./pages/DeviceDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ResourcesPage } from "./pages/ResourcesPage";
+import { ControlPage } from "./pages/ControlPage";
+import { ControlDetailPage } from "./pages/ControlDetailPage";
 import { DocsPage } from "./pages/DocsPage";
 import { ChangelogPage } from "./pages/ChangelogPage";
 import { DocDetailPage } from "./pages/DocDetailPage";
@@ -24,6 +26,8 @@ const router = createBrowserRouter([
   { path: "/devices/:id", element: protectedRoute(<DeviceDetailPage />) },
   { path: "/settings", element: protectedRoute(<SettingsPage />) },
   { path: "/resources", element: protectedRoute(<ResourcesPage />) },
+  { path: "/control", element: protectedRoute(<ControlPage />) },
+  { path: "/control/:id", element: protectedRoute(<ControlDetailPage />) },
 ]);
 
 export function App() {

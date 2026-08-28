@@ -20,6 +20,11 @@ import {
 } from "./dynsec-client";
 import { getStorageUsedBytes } from "./storage";
 import { logger } from "./logger";
+import {
+  parseDashboardConfig,
+  validateAndNormalizeControls,
+  denormalizeControls,
+} from "./dashboard-config";
 
 const VALID_COMMANDS = new Set(["set", "status.request", "config.update", "restart", "ping"]);
 const COMMAND_TIMEOUT_MS: Record<string, number> = {
@@ -41,6 +46,7 @@ interface DeviceRow {
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;
+  dashboard: string | null;
 }
 
 function generateClientId(): string {
@@ -64,7 +70,7 @@ devicesRouter.get("/", (_req, res) => {
 devicesRouter.get("/:id", (req, res) => {
   const device = getDb()
     .prepare(
-      `SELECT id, client_id, mqtt_username, display_name, created_at, updated_at, last_seen_at
+      `SELECT id, client_id, mqtt_username, display_name, created_at, updated_at, last_seen_at, dashboard
        FROM devices WHERE id = ?`,
     )
     .get(req.params.id) as DeviceRow | undefined;
@@ -73,7 +79,32 @@ devicesRouter.get("/:id", (req, res) => {
     res.status(404).json({ error: "Device not found" });
     return;
   }
-  res.json({ device });
+  const { dashboard, ...rest } = device;
+  res.json({
+    device: { ...rest, dashboard: denormalizeControls(parseDashboardConfig(dashboard).controls) },
+  });
+});
+
+devicesRouter.put("/:id/dashboard", (req, res) => {
+  const device = getDb().prepare("SELECT id FROM devices WHERE id = ?").get(req.params.id) as
+    | { id: number }
+    | undefined;
+  if (!device) {
+    res.status(404).json({ error: "Device not found" });
+    return;
+  }
+
+  try {
+    const controls = validateAndNormalizeControls(req.body?.controls);
+    getDb()
+      .prepare(`UPDATE devices SET dashboard = ?, updated_at = datetime('now') WHERE id = ?`)
+      .run(JSON.stringify({ version: 1, controls }), device.id);
+    res.json({ dashboard: denormalizeControls(controls) });
+  } catch (err) {
+    if (respondIfValidationError(err, res)) return;
+    logger.error("dashboard save error:", err);
+    res.status(500).json({ error: "Internal error" });
+  }
 });
 
 devicesRouter.post("/", async (req, res) => {

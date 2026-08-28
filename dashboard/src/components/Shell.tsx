@@ -6,6 +6,7 @@ import { logout } from "../lib/api/auth";
 export const navItems = [
   { to: "/", label: "Overview" },
   { to: "/devices", label: "Devices" },
+  { to: "/control", label: "Control" },
   { to: "/resources", label: "Resources" },
   { to: "/settings", label: "Settings" },
   { to: "/docs", label: "Documentation" },
