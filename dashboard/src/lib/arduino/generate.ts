@@ -296,7 +296,10 @@ void reconnectMQTT() {
     Serial.print(":");
     Serial.print(MQTT_PORT);
     Serial.println(" (TLS)...");
-    if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
+    // Last Will and Testament (PRD §30): registered here, at CONNECT time —
+    // the broker publishes it on our behalf on an ungraceful disconnect
+    // (network drop, power loss), never on a clean one we trigger ourselves.
+    if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD, TOPIC_EVENT, 1, false, "{\\"type\\":\\"network.disconnected\\"}")) {
       Serial.println("MQTT connected.");
 ${isRelay ? "      mqtt.subscribe(TOPIC_CMD);\n" : ""}      mqtt.publish(TOPIC_EVENT, "{\\"type\\":\\"boot\\"}");
     } else {

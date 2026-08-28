@@ -7,3 +7,5 @@ agent/bin/
 *.db-journal
 *.log
 .DS_Store
+dashboard/test-results/
+dashboard/playwright-report/

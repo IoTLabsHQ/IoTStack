@@ -1,6 +1,7 @@
 import type { Control } from "../../lib/api/control";
 import type { Message } from "../../lib/api/devices";
 import { extractCurrentValue } from "../../lib/control-values";
+import { formatRelativeTimeVi, formatExactTimeVi } from "../../lib/relativeTime";
 
 export function ControlWidget({
   control,
@@ -40,6 +41,24 @@ export function ControlWidget({
             />
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (control.type === "event") {
+    const asOfText = value.asOf ? formatRelativeTimeVi(value.asOf).text : null;
+    const asOfExact = value.asOf ? formatExactTimeVi(value.asOf) : undefined;
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-5" data-testid="control-widget-event">
+        <p className="text-sm text-slate-500">{control.label}</p>
+        <p className="mt-1 text-2xl font-semibold text-slate-900" data-testid="control-widget-event-type">
+          {value.current === null ? "—" : (value.current as string)}
+        </p>
+        {asOfText && (
+          <p className="mt-1 text-[11px] text-slate-400" title={asOfExact}>
+            {asOfText}
+          </p>
+        )}
       </div>
     );
   }

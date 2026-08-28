@@ -71,12 +71,16 @@ else
 
     SESSION_SECRET="$(openssl rand -base64 32)"
     DYNSEC_CONTROLLER_PASSWORD="$(openssl rand -base64 24)"
+    MQTT_COLLECTOR_PASSWORD="$(openssl rand -base64 24)"
+    MQTT_API_COMMAND_PASSWORD="$(openssl rand -base64 24)"
 
     sed -i.bak \
         -e "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=${ADMIN_EMAIL}|" \
         -e "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${ADMIN_PASSWORD}|" \
         -e "s|^SESSION_SECRET=.*|SESSION_SECRET=${SESSION_SECRET}|" \
         -e "s|^DYNSEC_CONTROLLER_PASSWORD=.*|DYNSEC_CONTROLLER_PASSWORD=${DYNSEC_CONTROLLER_PASSWORD}|" \
+        -e "s|^MQTT_COLLECTOR_PASSWORD=.*|MQTT_COLLECTOR_PASSWORD=${MQTT_COLLECTOR_PASSWORD}|" \
+        -e "s|^MQTT_API_COMMAND_PASSWORD=.*|MQTT_API_COMMAND_PASSWORD=${MQTT_API_COMMAND_PASSWORD}|" \
         .env
 
     if [[ -n "${DOMAIN}" ]]; then

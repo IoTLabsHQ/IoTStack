@@ -8,10 +8,10 @@
  * persisted — see denormalizeControls below.
  */
 import { randomUUID } from "crypto";
-import { ValidationError, requireString } from "./validation";
+import { ValidationError, requireString, optionalString } from "./validation";
 
-export type ControlType = "sensor-numeric" | "toggle";
-export type WidgetType = "label-value" | "min-max-current" | "toggle-switch";
+export type ControlType = "sensor-numeric" | "toggle" | "event";
+export type WidgetType = "label-value" | "min-max-current" | "toggle-switch" | "latest-event";
 
 export interface BaseControl {
   id: string;
@@ -27,7 +27,13 @@ export interface ToggleControl extends BaseControl {
   type: "toggle";
   binding: { source: "status"; target: string; field: string };
 }
-export type Control = SensorNumericControl | ToggleControl;
+export interface EventControl extends BaseControl {
+  type: "event";
+  /** Unset eventType shows the latest event of any type; set it to filter
+   * to one (e.g. "door.opened"). */
+  binding: { source: "event"; eventType?: string };
+}
+export type Control = SensorNumericControl | ToggleControl | EventControl;
 
 export interface DashboardConfig {
   version: 1;
@@ -37,6 +43,7 @@ export interface DashboardConfig {
 export const CONTROL_TYPE_WIDGETS: Record<ControlType, WidgetType[]> = {
   "sensor-numeric": ["label-value", "min-max-current"],
   toggle: ["toggle-switch"],
+  event: ["latest-event"],
 };
 
 const EMPTY_CONFIG: DashboardConfig = { version: 1, controls: [] };
@@ -61,8 +68,8 @@ function validateControl(input: unknown, index: number): Control {
   const id = typeof raw.id === "string" && raw.id.trim().length > 0 ? raw.id : randomUUID();
   const label = requireString(raw.label, `controls[${index}].label`);
 
-  if (raw.type !== "sensor-numeric" && raw.type !== "toggle") {
-    throw new ValidationError(`controls[${index}].type must be "sensor-numeric" or "toggle"`);
+  if (raw.type !== "sensor-numeric" && raw.type !== "toggle" && raw.type !== "event") {
+    throw new ValidationError(`controls[${index}].type must be "sensor-numeric", "toggle", or "event"`);
   }
   const type = raw.type;
 
@@ -81,6 +88,11 @@ function validateControl(input: unknown, index: number): Control {
   if (type === "sensor-numeric") {
     const field = requireString(binding.field, `controls[${index}].binding.field`);
     return { id, label, type, widget, binding: { source: "telemetry", field } };
+  }
+
+  if (type === "event") {
+    const eventType = optionalString(binding.eventType, `controls[${index}].binding.eventType`);
+    return { id, label, type, widget, binding: { source: "event", eventType } };
   }
 
   const target = requireString(binding.target, `controls[${index}].binding.target`);

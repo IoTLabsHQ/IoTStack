@@ -130,6 +130,14 @@ MQTT `collector` riêng, chỉ-subscribe, tách biệt khỏi tài khoản
    `devices.last_seen_at`. Không bao giờ cập nhật từ `cmd` (vì không được
    thu thập) hay từ tin nhắn bị loại ở bất kỳ bước nào trên.
 
+Firmware sinh ra giờ cũng đăng ký một MQTT Last Will and Testament thật tại
+lúc connect — `devices/{client_id}/event`, `{"type":"network.disconnected"}`
+— để một lần ngắt kết nối đột ngột (mất mạng, mất điện) vẫn tạo ra đúng một
+message `event` thật dù thiết bị chưa kịp tự publish gì. Được lưu qua đúng
+pipeline này, không xử lý riêng. Không đổi ý nghĩa `last_seen_at` (vẫn là
+"lần cuối nhận được message thật", không phải trạng thái kết nối live) —
+chỉ thêm một loại event phân biệt được nữa bên cạnh `boot`.
+
 Một sweep nền (mỗi giờ) xóa các dòng đã qua `expires_at` — SQLite không có
 TTL index sẵn như một số database khác, nên đây là một job định kỳ tường
 minh thay thế.

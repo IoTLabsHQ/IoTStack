@@ -1,0 +1,83 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # CI-only throwaway secrets — never committed, just distinct enough
+      # from the .env.example placeholder to satisfy the production
+      # startup guard (assertNoDefaultSecretsInProduction) so the stack
+      # actually boots.
+      - name: Generate CI .env
+        run: |
+          cat > .env <<'EOF'
+          ADMIN_EMAIL=ci@example.com
+          ADMIN_PASSWORD=ci-only-not-a-real-secret-1
+          SESSION_SECRET=ci-only-not-a-real-secret-2
+          DYNSEC_CONTROLLER_USERNAME=iotstack_controller
+          DYNSEC_CONTROLLER_PASSWORD=ci-only-not-a-real-secret-3
+          MQTT_COLLECTOR_USERNAME=iotstack_collector
+          MQTT_COLLECTOR_PASSWORD=ci-only-not-a-real-secret-4
+          MQTT_API_COMMAND_USERNAME=iotstack_api_command
+          MQTT_API_COMMAND_PASSWORD=ci-only-not-a-real-secret-5
+          EOF
+
+      - name: Boot the stack
+        run: docker compose up -d --build
+
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost/api/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "stack did not become healthy in time" >&2
+          docker compose logs
+          exit 1
+
+      - name: api typecheck + real e2e tests
+        working-directory: api
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+
+      - name: dashboard typecheck + build
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Playwright browsers
+        working-directory: dashboard
+        run: npx playwright install --with-deps chromium
+
+      - name: dashboard real e2e tests
+        working-directory: dashboard
+        run: npx playwright test --workers=1
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: dashboard/test-results
+          retention-days: 7
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v

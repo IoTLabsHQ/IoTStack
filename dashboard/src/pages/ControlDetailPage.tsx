@@ -32,6 +32,16 @@ function blankControl(type: ControlType): Control {
       binding: { source: "telemetry", field: "" },
     };
   }
+  if (type === "event") {
+    return {
+      id: randomId(),
+      label: "",
+      type,
+      widget,
+      matchingWidgets: ["latest-event"],
+      binding: { source: "event", eventType: undefined },
+    };
+  }
   return {
     id: randomId(),
     label: "",
@@ -53,6 +63,7 @@ export function ControlDetailPage() {
   const [newLabel, setNewLabel] = useState("");
   const [newField, setNewField] = useState("");
   const [newTarget, setNewTarget] = useState("");
+  const [newEventType, setNewEventType] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -128,6 +139,8 @@ export function ControlDetailPage() {
     control.label = newLabel.trim();
     if (control.type === "sensor-numeric") {
       control.binding = { source: "telemetry", field: newField.trim() };
+    } else if (control.type === "event") {
+      control.binding = { source: "event", eventType: newEventType.trim() || undefined };
     } else {
       control.binding = { source: "status", target: newTarget.trim(), field: "state" };
     }
@@ -135,6 +148,7 @@ export function ControlDetailPage() {
     setNewLabel("");
     setNewField("");
     setNewTarget("");
+    setNewEventType("");
   }
 
   return (
@@ -151,6 +165,7 @@ export function ControlDetailPage() {
         </div>
         {editing ? (
           <button
+            data-testid="control-save-button"
             onClick={() => saveMutation.mutate(draft)}
             disabled={saveMutation.isPending}
             className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
@@ -159,6 +174,7 @@ export function ControlDetailPage() {
           </button>
         ) : (
           <button
+            data-testid="control-edit-button"
             onClick={startEdit}
             className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100"
           >
@@ -257,6 +273,7 @@ export function ControlDetailPage() {
             <div>
               <label className="mb-1 block text-xs text-slate-500">Label</label>
               <input
+                data-testid="control-label-input"
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
                 placeholder="e.g. Living room temp"
@@ -266,6 +283,7 @@ export function ControlDetailPage() {
             <div>
               <label className="mb-1 block text-xs text-slate-500">Type</label>
               <select
+                data-testid="control-type-select"
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as ControlType)}
                 className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
@@ -287,6 +305,19 @@ export function ControlDetailPage() {
                   className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
                 />
               </div>
+            ) : newType === "event" ? (
+              <div>
+                <label className="mb-1 block text-xs text-slate-500">
+                  Event type filter (optional)
+                </label>
+                <input
+                  data-testid="control-event-type-input"
+                  value={newEventType}
+                  onChange={(e) => setNewEventType(e.target.value)}
+                  placeholder="e.g. door.opened — blank shows any"
+                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                />
+              </div>
             ) : (
               <div>
                 <label className="mb-1 block text-xs text-slate-500">Status target</label>
@@ -300,8 +331,16 @@ export function ControlDetailPage() {
             )}
           </div>
           <button
+            data-testid="control-add-button"
             onClick={addControl}
-            disabled={!newLabel.trim() || (newType === "sensor-numeric" ? !newField.trim() : !newTarget.trim())}
+            disabled={
+              !newLabel.trim() ||
+              (newType === "sensor-numeric"
+                ? !newField.trim()
+                : newType === "toggle"
+                  ? !newTarget.trim()
+                  : false)
+            }
             className="mt-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
           >
             Add

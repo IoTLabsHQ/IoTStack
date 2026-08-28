@@ -37,6 +37,7 @@ export function LoginPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
             <input
+              data-testid="auth-email-input"
               type="email"
               required
               value={email}
@@ -47,6 +48,7 @@ export function LoginPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
             <input
+              data-testid="auth-password-input"
               type="password"
               required
               value={password}
@@ -58,6 +60,7 @@ export function LoginPage() {
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
+            data-testid="auth-submit-button"
             type="submit"
             disabled={submitting}
             className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"

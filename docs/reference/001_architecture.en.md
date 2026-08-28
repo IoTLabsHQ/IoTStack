@@ -127,6 +127,15 @@ Security. For each message:
    updated. Never updated from `cmd` (it isn't ingested at all) or from a
    message rejected at any step above.
 
+Generated firmware also registers a real MQTT Last Will and Testament at
+connect time — `devices/{client_id}/event`, `{"type":"network.disconnected"}`
+— so an ungraceful drop (network loss, power loss) still produces one real
+`event` message even though the device never got to publish anything
+itself. It's stored through this exact same pipeline, no special-casing.
+This doesn't change what `last_seen_at` means (still "last time a real
+message arrived," not live connection state) — it just adds one more
+distinguishable event type alongside `boot`.
+
 A background sweep (hourly) deletes rows past their `expires_at` — SQLite
 has no native TTL index the way some databases do, so this is an explicit
 periodic job instead.
