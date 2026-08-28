@@ -129,7 +129,18 @@ rsync -az --delete \
 
 
 # ============================================================
-# Step 4 — deploy the app
+# Step 4 — resource-monitoring agent (must be running before
+# `docker compose up`, so its socket exists for the api
+# container to bind-mount — see build-agent.sh/install-agent.sh)
+# ============================================================
+
+log "Building and installing the resource-monitoring agent on ${TARGET}..."
+
+ssh "${TARGET}" "chmod +x '${APP_DIR}/deploy/build-agent.sh' '${APP_DIR}/deploy/install-agent.sh' && '${APP_DIR}/deploy/build-agent.sh' && '${APP_DIR}/deploy/install-agent.sh'"
+
+
+# ============================================================
+# Step 5 — deploy the app
 # ============================================================
 
 log "Deploying IoTStack on ${TARGET}..."

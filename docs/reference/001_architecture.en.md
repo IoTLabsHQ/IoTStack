@@ -171,3 +171,19 @@ Approximate idle RAM, measured against the images this project pins:
 safety net — not because any of them is expected to approach it under
 normal use, but so a misbehaving device (e.g. a retry-looping firmware
 bug) degrades that one container instead of the whole VPS.
+
+## Resource monitoring
+
+None of the three containers can see real host-level CPU/RAM/disk usage —
+no `docker.sock`, no `/proc`/`/sys` mount, no privileged mode is granted to
+any of them. Rather than widen that access, a small `iotstack-agent`
+process runs directly on the VPS host (outside Docker, as a systemd
+service): it reads `/proc` for host-wide stats and talks to the local
+Docker daemon for per-container (mosquitto/api/caddy) usage, then exposes
+both over a unix socket. Only `api` gets a new bind mount for that socket
+— `mosquitto` and `caddy` are untouched. `api` polls the agent, persists
+samples to SQLite, and rolls them up into hourly/daily aggregates so the
+dashboard's Resources page can chart usage by day, week, month, and year
+without the raw table growing unbounded. See
+[Security](002_security.en.md) for why a unix socket instead of a network
+port or a `/proc` bind-mount into the container.

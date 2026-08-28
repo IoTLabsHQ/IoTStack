@@ -105,6 +105,21 @@ bỏ nó về mặt cấu trúc thay vì phải cẩn thận khóa ở tầng �
   trong vòng nửa phút, không phải ngay lập tức. Ghi rõ như vậy thay vì
   hứa hẹn zero-downtime, vì việc reload broker mất chưa tới một giây,
   không phải hoàn toàn vô hình.
+- **Agent theo dõi tài nguyên** (`iotstack-agent`, một process riêng trên
+  host VPS — xem [Kiến trúc](001_architecture.vi.md#theo-dõi-tài-nguyên))
+  được `api` truy cập qua một unix socket — agent lắng nghe tại
+  `/run/iotstack-agent/agent.sock` trên host (dùng `RuntimeDirectory` của
+  systemd, vì `/run` gốc của host thuộc quyền root còn agent chạy dưới
+  user non-root riêng), bind-mount vào `/run/iotstack-agent.sock` bên
+  trong container `api`. Socket
+  này để mode world-connectable (`0666`) thay vì giới hạn theo uid, vì nó
+  chỉ phục vụ số liệu usage read-only, không nhạy cảm — không credential,
+  không thao tác điều khiển — và vốn dĩ không thể truy cập được từ ngoài
+  filesystem namespace của chính host này. Lựa chọn này thay cho TCP port
+  để tránh hẳn câu hỏi về network exposure mà cách loopback/host-gateway
+  sẽ gặp phải, và thay cho việc bind-mount `/proc`/`/sys` thẳng vào `api`,
+  vốn sẽ mở rộng quyền truy cập của riêng container đó nhiều hơn hẳn so
+  với một file socket duy nhất.
 
 ## Email (SMTP)
 

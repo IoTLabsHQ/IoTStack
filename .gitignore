@@ -2,6 +2,7 @@
 node_modules/
 api/dist/
 dashboard/dist/
+agent/bin/
 *.db
 *.db-journal
 *.log

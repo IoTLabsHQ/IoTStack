@@ -39,4 +39,9 @@ export const config = {
     storageCapMB: parseInt(process.env.STORAGE_CAP_MB ?? "500", 10),
     rawRetentionDays: parseInt(process.env.RAW_RETENTION_DAYS ?? "14", 10),
   },
+
+  resources: {
+    agentSocketPath: process.env.RESOURCE_AGENT_SOCKET_PATH ?? "/run/iotstack-agent.sock",
+    pollIntervalSeconds: parseInt(process.env.RESOURCE_POLL_INTERVAL_SECONDS ?? "30", 10),
+  },
 };

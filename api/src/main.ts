@@ -2,14 +2,16 @@ import express from "express";
 import helmet from "helmet";
 import { config } from "./config";
 import { logger } from "./logger";
-import { runMigrations, seedAdmin, seedSettings, getSettingsRow } from "./db";
+import { runMigrations, seedAdmin, seedSettings, seedResourceThresholds, getSettingsRow } from "./db";
 import { connectDynsec } from "./dynsec-client";
 import { startCollector, startRetentionSweep, getCollectorStatus } from "./collector";
+import { startResourceCollector, startResourceRollupSweep } from "./resource-collector";
 import { assertNoDefaultSecretsInProduction } from "./startup-guard";
 import { authRouter } from "./auth.routes";
 import { devicesRouter } from "./devices.routes";
 import { statsRouter } from "./stats.routes";
 import { settingsRouter } from "./settings.routes";
+import { resourcesRouter } from "./resources.routes";
 import { writeDomainFile } from "./settings-sync";
 import { pushCaddyConfig } from "./caddy-client";
 
@@ -18,9 +20,12 @@ async function main(): Promise<void> {
   runMigrations();
   seedAdmin();
   seedSettings();
+  seedResourceThresholds();
   await connectDynsec();
   startCollector();
   startRetentionSweep();
+  startResourceCollector();
+  startResourceRollupSweep();
 
   // Self-heal: re-sync the shared domain file and Caddy's live config from
   // the DB (source of truth) on every boot, in case either volume was ever
@@ -40,6 +45,7 @@ async function main(): Promise<void> {
   app.use("/devices", devicesRouter);
   app.use("/stats", statsRouter);
   app.use("/settings", settingsRouter);
+  app.use("/resources", resourcesRouter);
 
   app.get("/health", (_req, res) => {
     if (getCollectorStatus() === "disconnected") {

@@ -171,3 +171,19 @@ RAM idle ước tính, đo trên các image dự án này pin:
 một lớp bảo vệ — không phải vì service nào đó dự kiến chạm tới giới hạn
 khi dùng bình thường, mà để một thiết bị hoạt động sai (ví dụ firmware bị
 lỗi retry-loop) chỉ làm suy giảm đúng container đó thay vì cả VPS.
+
+## Theo dõi tài nguyên
+
+Cả ba container đều không thấy được usage CPU/RAM/disk thật của host — không
+có `docker.sock`, không mount `/proc`/`/sys`, không container nào được cấp
+privileged mode. Thay vì mở rộng quyền truy cập đó, một process nhỏ
+`iotstack-agent` chạy trực tiếp trên host VPS (ngoài Docker, dạng systemd
+service): đọc `/proc` để lấy số liệu toàn host, và nói chuyện với Docker
+daemon cục bộ để lấy usage từng container (mosquitto/api/caddy), rồi expose
+cả hai qua một unix socket. Chỉ `api` được thêm bind mount cho socket đó —
+`mosquitto` và `caddy` không đụng gì. `api` poll agent, lưu sample vào
+SQLite, và rollup thành dữ liệu theo giờ/ngày để trang Resources trên
+dashboard vẽ được biểu đồ usage theo ngày, tuần, tháng, năm mà không làm
+bảng dữ liệu thô phình vô hạn. Xem [Bảo mật](002_security.vi.md) để hiểu
+vì sao chọn unix socket thay vì network port hay mount `/proc` thẳng vào
+container.
