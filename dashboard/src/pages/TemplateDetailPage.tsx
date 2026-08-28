@@ -309,7 +309,7 @@ export function TemplateDetailPage() {
           <button
             onClick={runWizard}
             disabled={!domain || !template}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-md bg-primary-800 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {lang === "vi" ? "Tạo" : "Create"}
           </button>
@@ -326,7 +326,7 @@ export function TemplateDetailPage() {
                     step < wizardStep
                       ? "bg-emerald-500 text-white"
                       : step === wizardStep
-                        ? "animate-pulse bg-slate-900 text-white"
+                        ? "animate-pulse bg-primary-800 text-white"
                         : "bg-slate-100 text-slate-400"
                   }`}
                 >
@@ -357,7 +357,7 @@ export function TemplateDetailPage() {
           <div className="flex gap-2">
             <button
               onClick={() => triggerDownload(`${id}.ino`, result.code, "text/x-arduino")}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="rounded-md bg-primary-800 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
             >
               {lang === "vi" ? "Tải .ino" : "Download .ino"}
             </button>

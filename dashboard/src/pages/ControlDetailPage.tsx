@@ -168,7 +168,7 @@ export function ControlDetailPage() {
             data-testid="control-save-button"
             onClick={() => saveMutation.mutate(draft)}
             disabled={saveMutation.isPending}
-            className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="rounded-md bg-primary-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {saveMutation.isPending ? "Saving…" : "Done"}
           </button>
@@ -341,7 +341,7 @@ export function ControlDetailPage() {
                   ? !newTarget.trim()
                   : false)
             }
-            className="mt-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="mt-3 rounded-md bg-primary-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
           >
             Add
           </button>

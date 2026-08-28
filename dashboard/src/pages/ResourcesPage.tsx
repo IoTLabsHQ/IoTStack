@@ -63,7 +63,7 @@ function Gauge({
       <p className={`mt-1 text-2xl font-semibold ${LEVEL_CLASSES[level]}`}>{valueLabel}</p>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className={`h-full ${level === "critical" ? "bg-red-500" : level === "warn" ? "bg-amber-500" : "bg-slate-900"}`}
+          className={`h-full ${level === "critical" ? "bg-red-500" : level === "warn" ? "bg-amber-500" : "bg-primary-800"}`}
           style={{ width: `${Math.min(100, Math.max(0, pctValue))}%` }}
         />
       </div>
@@ -296,7 +296,7 @@ export function ResourcesPage() {
               onClick={() => setGranularity(g.key)}
               className={`rounded px-3 py-1 font-medium ${
                 granularity === g.key
-                  ? "bg-slate-900 text-white"
+                  ? "bg-primary-800 text-white"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -351,7 +351,7 @@ export function ResourcesPage() {
             <button
               type="submit"
               disabled={thresholdsMutation.isPending}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-md bg-primary-800 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
             >
               {thresholdsMutation.isPending ? "Saving…" : "Save thresholds"}
             </button>

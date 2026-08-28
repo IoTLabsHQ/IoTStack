@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+/* Brand primary — 11-step scale generated from #0e8578 (HSL H=173.4 S=81.0%
+   L=28.8%), anchored at the 800 step (closest to the measured lightness of
+   the base hex), hue/saturation held constant with a standard lightness
+   taper at the other steps — not a linear RGB interpolation. */
+@theme {
+  --color-primary-50: #f4fafa;
+  --color-primary-100: #e0f5f3;
+  --color-primary-200: #bbede7;
+  --color-primary-300: #85e5db;
+  --color-primary-400: #47e1d0;
+  --color-primary-500: #1bd0bc;
+  --color-primary-600: #13aa99;
+  --color-primary-700: #109485;
+  --color-primary-800: #0e8578;
+  --color-primary-900: #0d685e;
+  --color-primary-950: #0c403b;
+}

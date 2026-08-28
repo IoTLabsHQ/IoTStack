@@ -113,7 +113,7 @@ export function SettingsPage() {
               <button
                 type="submit"
                 disabled={domainMutation.isPending}
-                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-md bg-primary-800 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
               >
                 {domainMutation.isPending ? "Saving…" : "Save"}
               </button>
@@ -215,7 +215,7 @@ export function SettingsPage() {
                 <button
                   type="submit"
                   disabled={smtpMutation.isPending}
-                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  className="rounded-md bg-primary-800 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
                 >
                   {smtpMutation.isPending ? "Testing…" : "Test & Save"}
                 </button>

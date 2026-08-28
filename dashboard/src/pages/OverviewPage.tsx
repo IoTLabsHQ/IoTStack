@@ -81,7 +81,7 @@ function TryTemplateBanner() {
           Go from zero to a working device you can view and control on the web, in a few clicks.
         </p>
       </div>
-      <span className="shrink-0 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+      <span className="shrink-0 rounded-md bg-primary-800 px-4 py-2 text-sm font-medium text-white">
         Get started
       </span>
     </Link>

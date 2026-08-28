@@ -31,7 +31,7 @@ export function ControlWidget({
             disabled={toggling}
             onClick={() => onToggle(control, !isOn)}
             className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-              isOn ? "bg-slate-900" : "bg-slate-300"
+              isOn ? "bg-primary-800" : "bg-slate-300"
             }`}
           >
             <span

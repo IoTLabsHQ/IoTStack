@@ -64,7 +64,7 @@ export function LoginPage() {
             data-testid="auth-submit-button"
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="w-full rounded-md bg-primary-800 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {submitting ? "Signing in…" : "Sign in"}
           </button>

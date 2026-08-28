@@ -11,7 +11,7 @@ function DocsNav({ lang }: { lang: DocsLang }) {
       <NavLink
         to="/docs/changelog"
         className={({ isActive }) =>
-          `text-sm font-medium ${isActive ? "text-slate-900" : "text-slate-600 hover:text-slate-900"}`
+          `text-sm font-medium ${isActive ? "text-primary-800" : "text-slate-600 hover:text-primary-800"}`
         }
       >
         {lang === "vi" ? "Nhật ký thay đổi" : "Changelog"}
@@ -28,7 +28,7 @@ function DocsNav({ lang }: { lang: DocsLang }) {
                 <NavLink
                   to={`/docs/${g.group}/${d.slug}`}
                   className={({ isActive }) =>
-                    `text-sm ${isActive ? "font-medium text-slate-900" : "text-slate-600 hover:text-slate-900"}`
+                    `text-sm ${isActive ? "font-medium text-primary-800" : "text-slate-600 hover:text-primary-800"}`
                   }
                 >
                   {d.title[lang]}
@@ -65,7 +65,7 @@ export function DocsShell({ children }: { children: (lang: DocsLang) => ReactNod
                     className={({ isActive }) =>
                       `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                         isActive
-                          ? "bg-slate-900 text-white"
+                          ? "bg-primary-800 text-white"
                           : "text-slate-600 hover:bg-slate-100"
                       }`
                     }
@@ -82,7 +82,7 @@ export function DocsShell({ children }: { children: (lang: DocsLang) => ReactNod
                 key={l}
                 onClick={() => setLang(l)}
                 className={`rounded px-2 py-1 font-medium ${
-                  lang === l ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                  lang === l ? "bg-primary-800 text-white" : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 {l.toUpperCase()}
