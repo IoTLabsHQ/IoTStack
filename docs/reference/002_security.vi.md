@@ -20,10 +20,24 @@ không tin tưởng lẫn nhau cùng dùng chung một instance — xem
 
 Thiết bị xác thực trực tiếp với plugin Dynamic Security của Mosquitto —
 username/password, được kiểm tra bởi chính broker, không qua callback tới
-service khác. Role của mỗi thiết bị chỉ cấp quyền đúng một tiền tố topic
-(`devices/{client_id}/#`), và bản thân client ID được ràng buộc với
-username tại thời điểm tạo, nên chỉ password bị lộ thôi không đủ để
-attacker kết nối lại dưới một client ID khác.
+service khác. Role của mỗi thiết bị chỉ cấp quyền publish trên đúng 4
+topic `telemetry`/`status`/`event`/`ping` của chính nó, và quyền
+subscribe+receive trên đúng topic `cmd` của chính nó — không bao giờ gộp
+thành một wildcard `devices/{client_id}/#` duy nhất cho cả hai chiều, vì
+như vậy device có thể tự publish giả lệnh lên topic `cmd` của chính nó
+(tự giả mạo lệnh server) cũng như đọc lại các topic mà nó không có lý do
+gì phải đọc. Bản thân client ID được ràng buộc với username tại thời điểm
+tạo, nên chỉ password bị lộ thôi không đủ để attacker kết nối lại dưới
+một client ID khác.
+
+Ba nhiệm vụ phía server nói chuyện với broker cũng là các principal MQTT
+riêng biệt, phạm vi hẹp, không phải một tài khoản dùng chung:
+`dynsec-admin` (chỉ `$CONTROL/dynamic-security/*`, dùng để cấp/thu hồi
+credential thiết bị), `collector` (chỉ subscribe,
+`devices/+/{telemetry,status,event,ping}`, không bao giờ `cmd`), và
+`api-command` (chỉ publish, `devices/+/cmd`). Một credential trong 3 cái
+này bị lộ cũng không thể dùng để làm 2 việc còn lại, và không cái nào
+đụng được tới `$CONTROL` ngoại trừ `dynsec-admin`.
 
 Credential không bao giờ được lưu dưới dạng plaintext có thể khôi phục
 hay ciphertext có thể đảo ngược ở bất kỳ đâu trong database riêng của dự
@@ -63,11 +77,14 @@ trong codebase này.
 
 ## Rate limiting và giới hạn dung lượng
 
-Cả hai được áp dụng theo từng thiết bị, giá trị có thể cấu hình theo từng
-deployment (`RATE_LIMIT_MSG_PER_MIN`, `STORAGE_CAP_MB`) — không có phân
-tầng theo gói, chỉ một bộ giới hạn phẳng cho cả instance, vì một instance
+Áp dụng theo từng thiết bị, giá trị có thể cấu hình theo từng deployment
+(`RATE_LIMIT_MSG_PER_MIN`, `STORAGE_CAP_MB`) — không có phân tầng theo
+gói, chỉ một bộ giới hạn phẳng cho cả instance, vì một instance
 self-hosted chỉ có một operator tự set giới hạn cho thiết bị của chính
-họ.
+họ. Riêng một giới hạn per-message (`MAX_PAYLOAD_BYTES`,
+`MAX_PAYLOAD_KEYS`, `MAX_PAYLOAD_DEPTH`) từ chối một tin nhắn đơn lẻ quá
+lớn hoặc lồng sâu tùy ý ngay trước khi nó kịp tính vào cap dung lượng
+tổng.
 
 Kiểm tra giới hạn dung lượng là một `UPDATE` SQL atomic duy nhất (kiểm
 tra và tăng trong cùng một câu lệnh), không phải đọc-rồi-ghi riêng biệt —
@@ -138,8 +155,9 @@ lưu lại cấu hình SMTP luôn yêu cầu nhập lại password.
 ## An toàn khi khởi động
 
 Service `api` từ chối khởi động khi `NODE_ENV=production` và bất kỳ giá
-trị nào trong `ADMIN_PASSWORD`, `SESSION_SECRET`, hoặc
-`DYNSEC_CONTROLLER_PASSWORD` vẫn còn khớp giá trị placeholder trong
+trị nào trong `ADMIN_PASSWORD`, `SESSION_SECRET`,
+`DYNSEC_CONTROLLER_PASSWORD`, `MQTT_COLLECTOR_PASSWORD`, hoặc
+`MQTT_API_COMMAND_PASSWORD` vẫn còn khớp giá trị placeholder trong
 `.env.example` — bắt lỗi "quên đổi secret mặc định trước khi deploy"
 ngay lúc khởi động thay vì âm thầm chạy với một password ai cũng biết.
 

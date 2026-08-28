@@ -10,9 +10,13 @@ Browser/ESP32 ──HTTP (hoặc HTTPS khi đã set domain)──► Caddy (reve
 ESP32 ──MQTT :1883, MQTTS :8883, WS :9001── Mosquitto (+ plugin Dynamic Security)
                                                 │
                                                 │  $CONTROL/dynamic-security/v1
-                                                │  (quản lý credential/ACL, live)
+                                                │  (principal dynsec-admin, quản lý credential/ACL)
                                                 │
-                                                │  devices/# (thu thập tin nhắn, QoS 1)
+                                                │  devices/+/{telemetry,status,event,ping}
+                                                │  (principal collector, chỉ subscribe, QoS 1)
+                                                │
+                                                │  devices/+/cmd
+                                                │  (principal api-command, chỉ publish, QoS 1)
                                                 ▼
                                               api ──► SQLite (một file duy nhất)
 ```
@@ -23,13 +27,20 @@ Ba container:
   Dynamic Security tích hợp sẵn để xác thực và phân quyền topic theo từng
   thiết bị. Không có auth backend riêng, không có HTTP callback mỗi lần
   kết nối — broker tự sở hữu identity và access control.
-- **api** — một service Node.js/Express nhỏ với ba nhiệm vụ:
+- **api** — một service Node.js/Express nhỏ với ba nhiệm vụ, mỗi nhiệm vụ
+  qua kết nối MQTT riêng, xác thực bằng một principal riêng biệt, phạm vi
+  hẹp (không có tài khoản dùng chung "làm được mọi thứ"):
   1. REST API cho dashboard (login, CRUD thiết bị, truy vấn tin nhắn/thống
      kê).
   2. Đẩy thay đổi credential/ACL vào plugin Dynamic Security của Mosquitto
-     khi một thiết bị được tạo, tạo lại, hoặc xóa.
-  3. Subscribe `devices/#` như một collector, lưu tin nhắn vào SQLite và
-     áp dụng rate limit + giới hạn dung lượng lưu trữ.
+     khi một thiết bị được tạo, tạo lại, hoặc xóa (principal
+     `dynsec-admin` — chỉ `$CONTROL/dynamic-security/*`).
+  3. Subscribe `devices/+/{telemetry,status,event,ping}` như một collector,
+     lưu tin nhắn vào SQLite và áp dụng rate limit + giới hạn dung lượng
+     lưu trữ (principal `collector` — chỉ đọc, không bao giờ thấy `cmd` vì
+     đó là server→device, không phải tin nhắn cần thu thập). Publish lệnh
+     điều khiển thiết bị qua một kết nối khác nữa (principal
+     `api-command` — chỉ publish, `devices/+/cmd`).
 - **caddy** — reverse proxy và static file server cho dashboard. Luôn phục
   vụ HTTP thường trên `:80` — không liên quan domain, TLS/SNI, nên truy
   cập qua IP luôn hoạt động vô điều kiện. `api` có thể đẩy một site block
@@ -49,14 +60,18 @@ nhớ).
 Mỗi thiết bị có một `client_id`, dùng vừa làm định danh MQTT vừa làm tiền
 tố của mọi topic thiết bị được phép dùng: `devices/{client_id}/...`.
 
-Khi một thiết bị được tạo, `api` gửi ba lệnh tới plugin Dynamic Security
+Khi một thiết bị được tạo, `api` gửi nhiều lệnh tới plugin Dynamic Security
 của Mosquitto qua topic API `$CONTROL/dynamic-security/v1`:
 
 1. `createRole` — một role chỉ dành riêng cho thiết bị này
    (`role_{client_id}`).
-2. `addRoleACL` (`publishClientSend`, `subscribePattern`) — cả hai chỉ cấp
-   `devices/{client_id}/#`, một topic wildcard tính từ chính chuỗi client
-   ID.
+2. `addRoleACL`, mỗi lệnh một topic — quyền publish trên đúng 4 topic
+   `telemetry`/`status`/`event`/`ping` của chính thiết bị đó, và quyền
+   subscribe+receive trên đúng topic `cmd` của chính nó. Cố tình **không**
+   gộp thành một wildcard `devices/{client_id}/#` duy nhất cho cả hai
+   chiều — vì như vậy device có thể tự publish giả lệnh lên topic `cmd`
+   của chính nó (tự giả mạo lệnh server) hoặc subscribe các topic
+   sensor/state mà nó không có lý do gì phải đọc lại.
 3. `createClient` — username/password của thiết bị, với `clientid` được
    ràng buộc với đúng `client_id` đó. Ràng buộc client ID của kết nối với
    username nghĩa là chỉ có password bị lộ thôi chưa đủ để kết nối dưới
@@ -83,25 +98,37 @@ chưa kết nối được.
 
 ## Pipeline thu thập tin nhắn
 
-Collector của `api` subscribe `devices/#` ở QoS 1, dùng cùng tài khoản
-controller quản lý Dynamic Security (role `admin` của nó đã có quyền
-subscribe rộng sẵn). Với mỗi tin nhắn:
+Collector của `api` subscribe `devices/+/{telemetry,status,event,ping}` ở
+QoS 1 — 4 topic filter tường minh, không bao giờ `devices/#`, và không bao
+giờ `cmd` (server→device, không phải thứ cần thu thập) — dùng principal
+MQTT `collector` riêng, chỉ-subscribe, tách biệt khỏi tài khoản
+`dynsec-admin` quản lý Dynamic Security. Với mỗi tin nhắn:
 
-1. **Kiểm tra loại tin nhắn** — segment cuối của topic phải là một trong
-   `ping`, `status`, `telemetry`, `cmd`. Bất kỳ loại nào khác đều bị loại.
-2. **Tra thiết bị** — segment `client_id` của topic phải khớp một thiết bị
+1. **Kiểm tra hình dạng topic** — phải đúng 3 segment
+   `devices/{client_id}/{loại}`, root là `devices`. Sai định dạng bị loại
+   ngay.
+2. **Kiểm tra loại tin nhắn** — segment cuối của topic phải là một trong
+   `telemetry`, `status`, `event`, `ping`. Bất kỳ loại nào khác (kể cả
+   `cmd`, thứ collector còn không subscribe tới) đều bị loại.
+3. **Tra thiết bị** — segment `client_id` của topic phải khớp một thiết bị
    đã biết. Client ID không xác định bị loại (chỉ xảy ra với thiết bị đã
    từng tồn tại rồi bị xóa, hoặc topic sai định dạng — ACL ở tầng broker
    đã ngăn không cho ai publish dưới `client_id` không thuộc về mình).
-3. **Rate limit** — bộ đếm cửa sổ cố định 1 phút cho mỗi thiết bị, trong
+4. **Giới hạn payload** — bị loại nếu vượt `MAX_PAYLOAD_BYTES`, hoặc (với
+   payload JSON) có nhiều hơn `MAX_PAYLOAD_KEYS` key hoặc lồng sâu hơn
+   `MAX_PAYLOAD_DEPTH`. Giới hạn tác động lưu trữ/CPU của một thiết bị,
+   độc lập với cap tổng dung lượng bên dưới.
+5. **Rate limit** — bộ đếm cửa sổ cố định 1 phút cho mỗi thiết bị, trong
    bộ nhớ (`RATE_LIMIT_MSG_PER_MIN`). Vượt giới hạn → bị loại âm thầm.
-4. **Giới hạn dung lượng** — một `UPDATE` SQL atomic duy nhất trên dòng
+6. **Giới hạn dung lượng** — một `UPDATE` SQL atomic duy nhất trên dòng
    `storage_usage` của thiết bị, kiểm tra và tăng trong cùng một câu lệnh
    SQL (`STORAGE_CAP_MB`). Mô hình single-writer của SQLite khiến việc
    này vốn dĩ không có race condition — xem [Bảo mật](002_security.vi.md)
    để hiểu vì sao điều đó quan trọng.
-5. **Lưu trữ** — ghi vào `messages` với `expires_at` tính từ
-   `RAW_RETENTION_DAYS` tại thời điểm insert.
+7. **Lưu trữ** — ghi vào `messages` với `expires_at` tính từ
+   `RAW_RETENTION_DAYS` tại thời điểm insert, sau đó cập nhật
+   `devices.last_seen_at`. Không bao giờ cập nhật từ `cmd` (vì không được
+   thu thập) hay từ tin nhắn bị loại ở bất kỳ bước nào trên.
 
 Một sweep nền (mỗi giờ) xóa các dòng đã qua `expires_at` — SQLite không có
 TTL index sẵn như một số database khác, nên đây là một job định kỳ tường

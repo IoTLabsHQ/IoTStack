@@ -15,6 +15,16 @@ export const config = {
     controllerPassword: process.env.DYNSEC_CONTROLLER_PASSWORD ?? "",
   },
 
+  mqttCollector: {
+    username: process.env.MQTT_COLLECTOR_USERNAME ?? "",
+    password: process.env.MQTT_COLLECTOR_PASSWORD ?? "",
+  },
+
+  mqttApiCommand: {
+    username: process.env.MQTT_API_COMMAND_USERNAME ?? "",
+    password: process.env.MQTT_API_COMMAND_PASSWORD ?? "",
+  },
+
   admin: {
     email: process.env.ADMIN_EMAIL ?? "",
     password: process.env.ADMIN_PASSWORD ?? "",
@@ -38,6 +48,9 @@ export const config = {
     rateLimitMsgPerMin: parseInt(process.env.RATE_LIMIT_MSG_PER_MIN ?? "60", 10),
     storageCapMB: parseInt(process.env.STORAGE_CAP_MB ?? "500", 10),
     rawRetentionDays: parseInt(process.env.RAW_RETENTION_DAYS ?? "14", 10),
+    maxPayloadBytes: parseInt(process.env.MAX_PAYLOAD_BYTES ?? "4096", 10),
+    maxPayloadKeys: parseInt(process.env.MAX_PAYLOAD_KEYS ?? "32", 10),
+    maxPayloadDepth: parseInt(process.env.MAX_PAYLOAD_DEPTH ?? "3", 10),
   },
 
   resources: {

@@ -4,6 +4,7 @@ import { config } from "./config";
 import { logger } from "./logger";
 import { runMigrations, seedAdmin, seedSettings, seedResourceThresholds, getSettingsRow } from "./db";
 import { connectDynsec } from "./dynsec-client";
+import { connectCommandClient } from "./command-client";
 import { startCollector, startRetentionSweep, getCollectorStatus } from "./collector";
 import { startResourceCollector, startResourceRollupSweep } from "./resource-collector";
 import { assertNoDefaultSecretsInProduction } from "./startup-guard";
@@ -22,6 +23,7 @@ async function main(): Promise<void> {
   seedSettings();
   seedResourceThresholds();
   await connectDynsec();
+  await connectCommandClient();
   startCollector();
   startRetentionSweep();
   startResourceCollector();

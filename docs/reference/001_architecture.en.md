@@ -10,9 +10,13 @@ Browser/ESP32 ──HTTP (or HTTPS once a domain is set)──► Caddy (reverse
 ESP32 ──MQTT :1883, MQTTS :8883, WS :9001── Mosquitto (+ Dynamic Security plugin)
                                                 │
                                                 │  $CONTROL/dynamic-security/v1
-                                                │  (credential/ACL management, live)
+                                                │  (dynsec-admin principal, credential/ACL management)
                                                 │
-                                                │  devices/# (message collection, QoS 1)
+                                                │  devices/+/{telemetry,status,event,ping}
+                                                │  (collector principal, subscribe-only, QoS 1)
+                                                │
+                                                │  devices/+/cmd
+                                                │  (api-command principal, publish-only, QoS 1)
                                                 ▼
                                               api ──► SQLite (single file)
 ```
@@ -23,12 +27,19 @@ Three containers:
   built-in Dynamic Security plugin for authentication and per-device
   topic authorization. No custom auth backend, no HTTP callback on every
   connection — the broker owns identity and access control natively.
-- **api** — a small Node.js/Express service with three jobs:
+- **api** — a small Node.js/Express service with three jobs, each over its
+  own MQTT connection authenticated as a distinct, narrowly-scoped
+  principal (see below — no shared "does everything" account):
   1. REST API for the dashboard (login, device CRUD, message/stats queries).
   2. Pushes credential/ACL changes into Mosquitto's Dynamic Security plugin
-     when a device is created, regenerated, or deleted.
-  3. Subscribes to `devices/#` as a message collector, persisting messages
-     to SQLite and enforcing the rate limit and storage cap.
+     when a device is created, regenerated, or deleted (`dynsec-admin`
+     principal — `$CONTROL/dynamic-security/*` only).
+  3. Subscribes to `devices/+/{telemetry,status,event,ping}` as a message
+     collector, persisting messages to SQLite and enforcing the rate limit
+     and storage cap (`collector` principal — read-only, and never sees
+     `cmd`, which is server→device, not a message to ingest). Publishes
+     device commands over yet another connection (`api-command`
+     principal — publish-only, `devices/+/cmd`).
 - **caddy** — reverse proxy and static file server for the dashboard.
   Always serves plain HTTP on `:80` — no domain, no TLS/SNI involved,
   so IP access is unconditional. `api` can push a domain-specific HTTPS
@@ -47,14 +58,18 @@ state, no session store beyond an in-memory map).
 Each device gets a `client_id`, used both as its MQTT identity and as the
 prefix of every topic it's allowed to use: `devices/{client_id}/...`.
 
-When a device is created, `api` sends three commands to Mosquitto's
+When a device is created, `api` sends several commands to Mosquitto's
 Dynamic Security plugin over its `$CONTROL/dynamic-security/v1` topic API:
 
 1. `createRole` — a role scoped to exactly this device
    (`role_{client_id}`).
-2. `addRoleACL` (`publishClientSend`, `subscribePattern`) — both granting
-   only `devices/{client_id}/#`, a topic wildcard computed from the actual
-   client ID string.
+2. `addRoleACL`, one per topic — publish rights on exactly this device's
+   own `telemetry`/`status`/`event`/`ping` topics, and
+   subscribe+receive rights on exactly its own `cmd` topic. Deliberately
+   **not** one combined `devices/{client_id}/#` wildcard for both
+   directions — that would let the device publish a fake command to its
+   own `cmd` topic (self-spoofing a server instruction) or subscribe to
+   sensor/state topics it has no reason to read back.
 3. `createClient` — the device's username/password, with `clientid` bound
    to the same `client_id`. Binding the connection's client ID to the
    username means a stolen password alone isn't enough to connect under a
@@ -79,26 +94,38 @@ yet.
 
 ## Message ingestion pipeline
 
-The `api` service's collector subscribes to `devices/#` at QoS 1 using the
-same controller account that manages Dynamic Security (its `admin` role
-already has broad subscribe rights). For each message:
+The `api` service's collector subscribes to
+`devices/+/{telemetry,status,event,ping}` at QoS 1 — four explicit topic
+filters, never `devices/#` and never `cmd` (server→device, not something
+to ingest) — using its own dedicated, subscribe-only `collector` MQTT
+principal, separate from the `dynsec-admin` account that manages Dynamic
+Security. For each message:
 
-1. **Message-type check** — the topic's last segment must be one of
-   `ping`, `status`, `telemetry`, `cmd`. Anything else is dropped.
-2. **Device lookup** — the topic's `client_id` segment must match a known
+1. **Topic shape check** — must be exactly `devices/{client_id}/{type}`,
+   three segments, root `devices`. Anything else is dropped outright.
+2. **Message-type check** — the topic's last segment must be one of
+   `telemetry`, `status`, `event`, `ping`. Anything else (including `cmd`,
+   which the collector doesn't even subscribe to) is dropped.
+3. **Device lookup** — the topic's `client_id` segment must match a known
    device. Unknown client IDs are dropped (this can only happen for a
    device that existed and was since deleted, or a malformed topic — the
    broker-level ACL already prevents anyone from publishing under a
    `client_id` they don't own).
-3. **Rate limit** — a fixed 1-minute-window counter per device, in memory
+4. **Payload bounds** — rejected if it exceeds `MAX_PAYLOAD_BYTES`, or (for
+   a JSON payload) has more than `MAX_PAYLOAD_KEYS` keys or nests deeper
+   than `MAX_PAYLOAD_DEPTH`. Bounds a device's storage/CPU impact
+   independent of the cumulative cap below.
+5. **Rate limit** — a fixed 1-minute-window counter per device, in memory
    (`RATE_LIMIT_MSG_PER_MIN`). Over the limit → dropped, silently.
-4. **Storage cap** — a single atomic `UPDATE` against the device's
+6. **Storage cap** — a single atomic `UPDATE` against the device's
    `storage_usage` row, checked and incremented in one SQL statement
    (`STORAGE_CAP_MB`). SQLite's single-writer model makes this
    inherently race-free — see [Security](002_security.en.md) for why that
    matters.
-5. **Persist** — written to `messages` with an `expires_at` computed from
-   `RAW_RETENTION_DAYS` at insert time.
+7. **Persist** — written to `messages` with an `expires_at` computed from
+   `RAW_RETENTION_DAYS` at insert time, then `devices.last_seen_at` is
+   updated. Never updated from `cmd` (it isn't ingested at all) or from a
+   message rejected at any step above.
 
 A background sweep (hourly) deletes rows past their `expires_at` — SQLite
 has no native TTL index the way some databases do, so this is an explicit

@@ -129,9 +129,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.println(body);
 
   // Expected payload (exactly what the dashboard's "Send a command" form
-  // sends): {"target":"relay_1","command":"set","value":true}
+  // sends): {"command":"set","request_id":"...","data":{"target":"relay_1","value":true}}
   // A tiny hand-rolled check is used here to avoid pulling in a JSON
-  // library for one field — swap in ArduinoJson if you need more.
+  // library for one field — it looks for the "target"/"command" substrings
+  // regardless of nesting, so it doesn't care that they're now inside
+  // "data" — swap in ArduinoJson if you need more.
   if (body.indexOf("\\"target\\":\\"" RELAY_TARGET_NAME "\\"") == -1) return;
   if (body.indexOf("\\"command\\":\\"set\\"") == -1) return;
   applyRelay(body.indexOf("\\"value\\":true") != -1);
@@ -237,6 +239,7 @@ const char* MQTT_PASSWORD  = "${device.password}";
 const char* TOPIC_TELEMETRY = "devices/${clientId}/telemetry";
 const char* TOPIC_CMD       = "devices/${clientId}/cmd";
 const char* TOPIC_STATUS    = "devices/${clientId}/status";
+const char* TOPIC_EVENT     = "devices/${clientId}/event";
 const char* TOPIC_PING      = "devices/${clientId}/ping";
 
 // ---- Heartbeat LED (present on every generated sketch) ----
@@ -295,7 +298,7 @@ void reconnectMQTT() {
     Serial.println(" (TLS)...");
     if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
       Serial.println("MQTT connected.");
-${isRelay ? "      mqtt.subscribe(TOPIC_CMD);\n" : ""}      mqtt.publish(TOPIC_PING, "{\\"event\\":\\"boot\\"}");
+${isRelay ? "      mqtt.subscribe(TOPIC_CMD);\n" : ""}      mqtt.publish(TOPIC_EVENT, "{\\"type\\":\\"boot\\"}");
     } else {
       char errBuf[128];
       wifiClient.lastError(errBuf, sizeof(errBuf));

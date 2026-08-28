@@ -138,8 +138,8 @@ export function DeviceDetailPage() {
           <dd className="font-mono">{device.client_id}</dd>
           <dt className="text-slate-500">Username</dt>
           <dd className="font-mono">{device.mqtt_username}</dd>
-          <dt className="text-slate-500">Publish topic</dt>
-          <dd className="font-mono">devices/{device.client_id}/telemetry</dd>
+          <dt className="text-slate-500">Publish topics</dt>
+          <dd className="font-mono">devices/{device.client_id}/{"{telemetry,status,event,ping}"}</dd>
           <dt className="text-slate-500">Subscribe topic</dt>
           <dd className="font-mono">devices/{device.client_id}/cmd</dd>
           <dt className="text-slate-500">Storage used</dt>

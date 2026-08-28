@@ -17,6 +17,7 @@ import { randomBytes } from "crypto";
 import mqtt, { MqttClient } from "mqtt";
 import { config } from "./config";
 import { logger } from "./logger";
+import { MQTT_TOPIC, DEVICE_MESSAGE_TYPES } from "./mqtt-topics";
 
 const CONTROL_TOPIC = "$CONTROL/dynamic-security/v1";
 const RESPONSE_TOPIC = "$CONTROL/dynamic-security/v1/response";
@@ -122,31 +123,99 @@ async function sendIgnoringConflict(command: Record<string, unknown>): Promise<v
   }
 }
 
+/** Ignores "not found" style errors — the caller is removing something that
+ * may already be gone (e.g. re-running the ACL migration script). */
+async function sendIgnoringMissing(command: Record<string, unknown>): Promise<void> {
+  try {
+    await sendCommand(command);
+  } catch (err) {
+    if (err instanceof Error && /not found/i.test(err.message)) return;
+    throw err;
+  }
+}
+
 function roleNameFor(clientId: string): string {
   return `role_${clientId}`;
+}
+
+/**
+ * Grants a device role its narrow, per-topic ACL (PRD §16-18): publish
+ * rights on exactly its own telemetry/status/event/ping topics, and
+ * subscribe+receive rights on exactly its own cmd topic — never a single
+ * `devices/{clientId}/#` wildcard covering both directions, which would let
+ * a device publish fake server commands to itself or eavesdrop on its own
+ * sensor/state topics it has no reason to read back.
+ */
+async function grantDeviceRoleAcl(rolename: string, clientId: string): Promise<void> {
+  for (const type of DEVICE_MESSAGE_TYPES) {
+    await sendIgnoringConflict({
+      command: "addRoleACL",
+      rolename,
+      acltype: "publishClientSend",
+      topic: MQTT_TOPIC[type](clientId),
+      allow: true,
+    });
+  }
+  const cmdTopic = MQTT_TOPIC.cmd(clientId);
+  await sendIgnoringConflict({
+    command: "addRoleACL",
+    rolename,
+    acltype: "subscribeLiteral",
+    topic: cmdTopic,
+    allow: true,
+  });
+  await sendIgnoringConflict({
+    command: "addRoleACL",
+    rolename,
+    acltype: "publishClientReceive",
+    topic: cmdTopic,
+    allow: true,
+  });
+}
+
+/**
+ * Revokes the old-style combined wildcard ACL (publishClientSend +
+ * subscribePattern on the whole `devices/{clientId}/#` subtree) a device
+ * role got under pre-migration code — idempotent, safe to call on a role
+ * that was already narrowed or never had the wildcard at all.
+ */
+async function revokeLegacyWildcardAcl(rolename: string, clientId: string): Promise<void> {
+  const topicWildcard = `devices/${clientId}/#`;
+  await sendIgnoringMissing({
+    command: "removeRoleACL",
+    rolename,
+    acltype: "publishClientSend",
+    topic: topicWildcard,
+  });
+  await sendIgnoringMissing({
+    command: "removeRoleACL",
+    rolename,
+    acltype: "subscribePattern",
+    topic: topicWildcard,
+  });
+}
+
+/**
+ * Re-applies the current (narrow, per-topic) ACL to an already-provisioned
+ * device — revokes the legacy wildcard grant if present, then grants the
+ * current one. Idempotent: safe to run repeatedly across every device in
+ * the DB, e.g. after upgrading a deployment that provisioned devices under
+ * older code. Does not touch the device's client/password — credential
+ * unchanged, only the role's ACL entries.
+ */
+export async function migrateDeviceAcl(clientId: string): Promise<void> {
+  const rolename = roleNameFor(clientId);
+  await revokeLegacyWildcardAcl(rolename, clientId);
+  await grantDeviceRoleAcl(rolename, clientId);
 }
 
 /** Creates a device's dedicated role + client with an isolated topic ACL,
  * live — no restart, no reload. */
 export async function createDeviceCredential(clientId: string, password: string): Promise<void> {
   const rolename = roleNameFor(clientId);
-  const topicWildcard = `devices/${clientId}/#`;
 
   await sendIgnoringConflict({ command: "createRole", rolename });
-  await sendCommand({
-    command: "addRoleACL",
-    rolename,
-    acltype: "publishClientSend",
-    topic: topicWildcard,
-    allow: true,
-  });
-  await sendCommand({
-    command: "addRoleACL",
-    rolename,
-    acltype: "subscribePattern",
-    topic: topicWildcard,
-    allow: true,
-  });
+  await grantDeviceRoleAcl(rolename, clientId);
   await sendCommand({
     command: "createClient",
     username: clientId,
@@ -166,18 +235,4 @@ export async function regenerateDeviceCredential(
 export async function deleteDeviceCredential(clientId: string): Promise<void> {
   await sendIgnoringConflict({ command: "deleteClient", username: clientId });
   await sendIgnoringConflict({ command: "deleteRole", rolename: roleNameFor(clientId) });
-}
-
-/**
- * Publishes a command to a device's own cmd topic, over the same
- * connection used for $CONTROL commands — the controller's admin role has
- * publishClientSend rights on devices/# (granted once at broker bootstrap,
- * see mosquitto/entrypoint.sh) specifically so this doesn't need its own
- * connection.
- */
-export function publishToDevice(clientId: string, payload: string): void {
-  if (!client) {
-    throw new Error("dynsec controller not connected");
-  }
-  client.publish(`devices/${clientId}/cmd`, payload, { qos: 1 });
 }

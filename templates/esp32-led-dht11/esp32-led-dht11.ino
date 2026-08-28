@@ -82,6 +82,7 @@ const char* MQTT_PASSWORD  = "__MQTT_PASSWORD__";
 const char* TOPIC_TELEMETRY = "devices/__MQTT_CLIENT_ID__/telemetry";
 const char* TOPIC_CMD       = "devices/__MQTT_CLIENT_ID__/cmd";
 const char* TOPIC_STATUS    = "devices/__MQTT_CLIENT_ID__/status";
+const char* TOPIC_EVENT     = "devices/__MQTT_CLIENT_ID__/event";
 const char* TOPIC_PING      = "devices/__MQTT_CLIENT_ID__/ping";
 
 // ---- Onboard LED — this IS the controllable "light", not a heartbeat ----
@@ -154,7 +155,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.println(body);
 
   // Expected payload (exactly what the dashboard's Control Panel toggle
-  // sends): {"target":"led_1","command":"set","value":true}
+  // sends): {"command":"set","request_id":"...","data":{"target":"led_1","value":true}}
+  // Looks for the "target"/"command" substrings regardless of nesting, so
+  // it doesn't care that they're now inside "data".
   if (body.indexOf("\"target\":\"" LED_TARGET_NAME "\"") == -1) return;
   if (body.indexOf("\"command\":\"set\"") == -1) return;
   applyLed(body.indexOf("\"value\":true") != -1);
@@ -170,7 +173,7 @@ void reconnectMQTT() {
     if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
       Serial.println("MQTT connected.");
       mqtt.subscribe(TOPIC_CMD);
-      mqtt.publish(TOPIC_PING, "{\"event\":\"boot\"}");
+      mqtt.publish(TOPIC_EVENT, "{\"type\":\"boot\"}");
     } else {
       char errBuf[128];
       wifiClient.lastError(errBuf, sizeof(errBuf));

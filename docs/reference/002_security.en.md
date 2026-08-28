@@ -19,10 +19,24 @@ distrusting operators share one instance — see [Known limitations](#known-limi
 
 Devices authenticate directly against Mosquitto's Dynamic Security plugin
 — username/password, checked by the broker itself, not by a callback to
-another service. Every device's role grants access to exactly one topic
-prefix (`devices/{client_id}/#`), and the client ID itself is bound to the
-username at creation time, so a leaked password alone doesn't let an
-attacker reconnect under a different client ID.
+another service. Every device's role grants publish rights on exactly its
+own `telemetry`/`status`/`event`/`ping` topics and subscribe+receive
+rights on exactly its own `cmd` topic — never one combined
+`devices/{client_id}/#` wildcard for both directions, which would let a
+device publish a fake command to its own `cmd` topic (self-spoofing a
+server instruction) as well as read back topics it has no reason to. The
+client ID itself is bound to the username at creation time, so a leaked
+password alone doesn't let an attacker reconnect under a different client
+ID.
+
+The three server-side jobs that talk to the broker are also separate,
+narrowly-scoped MQTT principals, not one shared account: `dynsec-admin`
+(only `$CONTROL/dynamic-security/*`, used to provision/revoke device
+credentials), `collector` (subscribe-only, `devices/+/{telemetry,status,event,ping}`,
+never `cmd`), and `api-command` (publish-only, `devices/+/cmd`). A
+compromised credential for any one of these can't be used to do either of
+the other two jobs, and none of them can touch `$CONTROL` except
+`dynsec-admin`.
 
 Credentials are never stored as recoverable plaintext or reversible
 ciphertext anywhere in this project's own database. The `devices` table
@@ -61,10 +75,13 @@ string concatenation into SQL text anywhere in this codebase.
 
 ## Rate limiting and storage caps
 
-Both are enforced per device, with values configurable per deployment
+Enforced per device, with values configurable per deployment
 (`RATE_LIMIT_MSG_PER_MIN`, `STORAGE_CAP_MB`) — there's no per-plan tiering,
 just one flat set of limits for the whole instance, since a self-hosted
-instance has one operator setting limits for their own devices.
+instance has one operator setting limits for their own devices. A separate,
+per-message bound (`MAX_PAYLOAD_BYTES`, `MAX_PAYLOAD_KEYS`,
+`MAX_PAYLOAD_DEPTH`) rejects an oversized or arbitrarily-nested single
+message before it's even counted against the cumulative storage cap.
 
 The storage-cap check is a single atomic SQL `UPDATE` (check-and-increment
 in one statement), not a separate read-then-write — SQLite serializes all
@@ -136,10 +153,11 @@ requires re-entering the password.
 ## Startup safety
 
 The `api` service refuses to start when `NODE_ENV=production` and any of
-`ADMIN_PASSWORD`, `SESSION_SECRET`, or `DYNSEC_CONTROLLER_PASSWORD` still
-match the placeholder value shipped in `.env.example` — catching "forgot
-to change the default secret before deploying" at boot instead of
-silently running with a known password.
+`ADMIN_PASSWORD`, `SESSION_SECRET`, `DYNSEC_CONTROLLER_PASSWORD`,
+`MQTT_COLLECTOR_PASSWORD`, or `MQTT_API_COMMAND_PASSWORD` still match the
+placeholder value shipped in `.env.example` — catching "forgot to change
+the default secret before deploying" at boot instead of silently running
+with a known password.
 
 ## Known limitations
 

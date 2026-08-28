@@ -15,6 +15,8 @@ const CHECKED_SECRETS: Array<{ name: string; value: string }> = [
   { name: "ADMIN_PASSWORD", value: config.admin.password },
   { name: "SESSION_SECRET", value: config.sessionSecret },
   { name: "DYNSEC_CONTROLLER_PASSWORD", value: config.dynsec.controllerPassword },
+  { name: "MQTT_COLLECTOR_PASSWORD", value: config.mqttCollector.password },
+  { name: "MQTT_API_COMMAND_PASSWORD", value: config.mqttApiCommand.password },
 ];
 
 /**

@@ -7,6 +7,10 @@ services:
     environment:
       DYNSEC_CONTROLLER_USERNAME: ${DYNSEC_CONTROLLER_USERNAME:-iotstack_controller}
       DYNSEC_CONTROLLER_PASSWORD: ${DYNSEC_CONTROLLER_PASSWORD:-changeme_generate_a_real_secret}
+      MQTT_COLLECTOR_USERNAME: ${MQTT_COLLECTOR_USERNAME:-iotstack_collector}
+      MQTT_COLLECTOR_PASSWORD: ${MQTT_COLLECTOR_PASSWORD:-changeme_generate_a_real_secret}
+      MQTT_API_COMMAND_USERNAME: ${MQTT_API_COMMAND_USERNAME:-iotstack_api_command}
+      MQTT_API_COMMAND_PASSWORD: ${MQTT_API_COMMAND_PASSWORD:-changeme_generate_a_real_secret}
     ports:
       - "1883:1883"
       - "8883:8883"
@@ -35,12 +39,19 @@ services:
       MOSQUITTO_PORT: "1883"
       DYNSEC_CONTROLLER_USERNAME: ${DYNSEC_CONTROLLER_USERNAME:-iotstack_controller}
       DYNSEC_CONTROLLER_PASSWORD: ${DYNSEC_CONTROLLER_PASSWORD:-changeme_generate_a_real_secret}
+      MQTT_COLLECTOR_USERNAME: ${MQTT_COLLECTOR_USERNAME:-iotstack_collector}
+      MQTT_COLLECTOR_PASSWORD: ${MQTT_COLLECTOR_PASSWORD:-changeme_generate_a_real_secret}
+      MQTT_API_COMMAND_USERNAME: ${MQTT_API_COMMAND_USERNAME:-iotstack_api_command}
+      MQTT_API_COMMAND_PASSWORD: ${MQTT_API_COMMAND_PASSWORD:-changeme_generate_a_real_secret}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
       SESSION_SECRET: ${SESSION_SECRET:-changeme_generate_a_real_secret}
       RATE_LIMIT_MSG_PER_MIN: ${RATE_LIMIT_MSG_PER_MIN:-60}
       STORAGE_CAP_MB: ${STORAGE_CAP_MB:-500}
       RAW_RETENTION_DAYS: ${RAW_RETENTION_DAYS:-14}
+      MAX_PAYLOAD_BYTES: ${MAX_PAYLOAD_BYTES:-4096}
+      MAX_PAYLOAD_KEYS: ${MAX_PAYLOAD_KEYS:-32}
+      MAX_PAYLOAD_DEPTH: ${MAX_PAYLOAD_DEPTH:-3}
       RESOURCE_POLL_INTERVAL_SECONDS: ${RESOURCE_POLL_INTERVAL_SECONDS:-30}
       DOMAIN: ${DOMAIN:-}
     volumes:

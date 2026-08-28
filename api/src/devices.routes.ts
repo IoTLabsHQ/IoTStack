@@ -7,7 +7,7 @@
  * reload. If that push fails, the SQLite change is rolled back so the two
  * stores never drift out of sync.
  */
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { Router } from "express";
 import { getDb } from "./db";
 import { requireAuth } from "./middleware";
@@ -16,8 +16,8 @@ import {
   createDeviceCredential,
   regenerateDeviceCredential,
   deleteDeviceCredential,
-  publishToDevice,
 } from "./dynsec-client";
+import { publishToDevice } from "./command-client";
 import { getStorageUsedBytes } from "./storage";
 import { logger } from "./logger";
 import {
@@ -243,7 +243,12 @@ devicesRouter.post("/:id/commands", (req, res) => {
       return;
     }
 
-    const payload = JSON.stringify({ target, command, value: req.body?.value });
+    // PRD §13/§14: envelope is always {command, request_id, data} — `data`
+    // is command-specific. "set" keeps this project's existing target/value
+    // control-panel concept, nested under `data` rather than flattened;
+    // other commands carry no extra data today.
+    const data = command === "set" ? { target, value: req.body?.value } : {};
+    const payload = JSON.stringify({ command, request_id: randomUUID(), data });
     publishToDevice(device.client_id, payload);
 
     res.json({ ok: true, commandTimeoutMs: COMMAND_TIMEOUT_MS[command] });

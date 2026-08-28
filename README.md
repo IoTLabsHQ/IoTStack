@@ -70,12 +70,13 @@ Host:     your-server-or-domain
 Port:     1883 (plain), 8883 (TLS, once a domain is set from Settings), 9001 (WebSocket)
 Username: <shown in dashboard>
 Password: <shown in dashboard>
-Publish:  devices/<client_id>/telemetry
+Publish:  devices/<client_id>/{telemetry,status,event,ping}
 Subscribe: devices/<client_id>/cmd
 ```
 
-Các loại tin nhắn được collector nhận dạng: `ping`, `status`, `telemetry`,
-`cmd` — tin nhắn gửi tới bất kỳ topic suffix nào khác sẽ bị loại bỏ.
+Các loại tin nhắn được collector nhận dạng: `telemetry`, `status`,
+`event`, `ping` — tin nhắn gửi tới bất kỳ topic suffix nào khác (kể cả
+`cmd`, vốn là chiều server→device) sẽ bị loại bỏ.
 
 ## Cấu hình
 

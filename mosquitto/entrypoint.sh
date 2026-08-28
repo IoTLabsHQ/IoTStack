@@ -101,15 +101,57 @@ wait_for_broker() {
 	return 1
 }
 
-if [ "$FRESH_INIT" = "1" ]; then
-	if wait_for_broker; then
-		echo "granting controller account command-publish rights..."
-		mosquitto_ctrl -h localhost -p 1883 -u "$DYNSEC_CONTROLLER_USERNAME" \
-			-P "$DYNSEC_CONTROLLER_PASSWORD" \
-			dynsec addRoleACL admin publishClientSend "devices/#" allow
-	else
-		echo "WARNING: broker didn't come up in time — controller command-publish rights not granted" >&2
-	fi
+# --- MQTT topic & ACL spec: dedicated collector/api-command principals ----
+#
+# Least privilege (see the "MQTT Topic & ACL Specification" doc): the
+# controller/admin account manages Dynamic Security itself ($CONTROL/*) and
+# nothing else. Message collection and command publishing are separate
+# accounts with only the narrow rights each job needs — neither can do the
+# other's job, and neither can touch $CONTROL. Runs on every boot (not just
+# FRESH_INIT), idempotently, so an existing deployment upgrading to this
+# version also gets these accounts instead of only brand-new installs.
+CTRL="mosquitto_ctrl -h localhost -p 1883 -u $DYNSEC_CONTROLLER_USERNAME -P $DYNSEC_CONTROLLER_PASSWORD"
+
+role_exists() {
+	# mosquitto_ctrl always exits 0 regardless of whether the dynsec command
+	# itself succeeded — confirmed against the real broker, not assumed — a
+	# "not found" result is only visible in the printed "Error: ..." text,
+	# never the exit code. Check output content, not $?.
+	$CTRL dynsec getRole "$1" 2>&1 | grep -q "^Rolename:"
+}
+
+setup_collector_principal() {
+	role_exists role-collector && return 0
+	echo "creating role-collector / $MQTT_COLLECTOR_USERNAME..."
+	$CTRL dynsec createRole role-collector
+	for type in telemetry status event ping; do
+		$CTRL dynsec addRoleACL role-collector subscribePattern "devices/+/$type" allow
+		$CTRL dynsec addRoleACL role-collector publishClientReceive "devices/+/$type" allow
+	done
+	$CTRL dynsec createClient "$MQTT_COLLECTOR_USERNAME" -p "$MQTT_COLLECTOR_PASSWORD"
+	$CTRL dynsec addClientRole "$MQTT_COLLECTOR_USERNAME" role-collector
+}
+
+setup_api_command_principal() {
+	role_exists role-api-command && return 0
+	echo "creating role-api-command / $MQTT_API_COMMAND_USERNAME..."
+	$CTRL dynsec createRole role-api-command
+	$CTRL dynsec addRoleACL role-api-command publishClientSend "devices/+/cmd" allow
+	$CTRL dynsec createClient "$MQTT_API_COMMAND_USERNAME" -p "$MQTT_API_COMMAND_PASSWORD"
+	$CTRL dynsec addClientRole "$MQTT_API_COMMAND_USERNAME" role-api-command
+}
+
+if wait_for_broker; then
+	setup_collector_principal
+	setup_api_command_principal
+	# Upgrade path: earlier versions granted the shared admin/controller
+	# account blanket devices/# publish rights so it could double as the
+	# command-publisher. That's now role-api-command's job instead — drop
+	# the old grant if present (no-op, ignored, on a fresh install or an
+	# already-upgraded one where it's already gone).
+	$CTRL dynsec removeRoleACL admin publishClientSend "devices/#" 2>/dev/null || true
+else
+	echo "WARNING: broker didn't come up in time — service principals not set up" >&2
 fi
 
 sync_tls_cert
