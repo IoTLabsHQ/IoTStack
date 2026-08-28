@@ -1,0 +1,32 @@
+{
+  "id": "esp32-led-dht11",
+  "boards": ["esp32-devkit-v1-30pin", "esp32-devkit-v1-38pin", "esp32-c3-supermini"],
+  "controls": [
+    {
+      "label": { "en": "LED", "vi": "Đèn LED" },
+      "type": "toggle",
+      "widget": "toggle-switch",
+      "binding": { "target": "led_1", "field": "state" }
+    },
+    {
+      "label": { "en": "Temperature", "vi": "Nhiệt độ" },
+      "type": "sensor-numeric",
+      "widget": "label-value",
+      "binding": { "field": "temperature_c" }
+    },
+    {
+      "label": { "en": "Humidity", "vi": "Độ ẩm" },
+      "type": "sensor-numeric",
+      "widget": "label-value",
+      "binding": { "field": "humidity_pct" }
+    }
+  ],
+  "hardware": [
+    { "name": { "en": "ESP32 dev board", "vi": "Board ESP32" }, "required": true },
+    {
+      "name": { "en": "DHT11 temperature/humidity sensor", "vi": "Cảm biến nhiệt độ/độ ẩm DHT11" },
+      "required": false
+    }
+  ],
+  "simulateDht11Default": true
+}

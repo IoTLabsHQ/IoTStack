@@ -16,7 +16,7 @@ export function buildCredentialText(c: CredentialInfo, host: string): string {
     `Username: ${c.mqttUsername}`,
     `Password: ${c.password}`,
     `Host: ${host}`,
-    `Port: 1883`,
+    `Port: 8883 (MQTTS)`,
     `Publish topic: devices/${c.clientId}/telemetry`,
     `Subscribe topic: devices/${c.clientId}/cmd`,
   ].join("\n");
@@ -29,7 +29,7 @@ export function buildCredentialCsv(c: CredentialInfo, host: string): string {
     ["Username", c.mqttUsername],
     ["Password", c.password],
     ["Host", host],
-    ["Port", "1883"],
+    ["Port", "8883 (MQTTS)"],
     ["Publish Topic", `devices/${c.clientId}/telemetry`],
     ["Subscribe Topic", `devices/${c.clientId}/cmd`],
     ["Generated At", new Date().toISOString()],

@@ -10,6 +10,43 @@ export interface GenerateSketchInput {
   mqttHost: string;
 }
 
+// ISRG Root X1 (Let's Encrypt) — every IoTStack MQTTS cert chains to this
+// root. Embedded verbatim (fetched + openssl-verified from
+// https://letsencrypt.org/certs/isrgrootx1.pem); a device has no other way
+// to obtain a CA bundle before its first-ever TLS handshake.
+// Valid 2015-06-04 to 2035-06-04.
+const ROOT_CA_PEM = `-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----`;
+
 function sanitizeForComment(s: string): string {
   return s.replace(/\*\//g, "* /").replace(/[\r\n]+/g, " ");
 }
@@ -154,27 +191,42 @@ export function generateSketch({ board, sample, device, mqttHost }: GenerateSket
   ------------------------------------------------------------------
   REQUIRED LIBRARIES (Arduino IDE > Tools > Manage Libraries):
 ${requiredLibraries(sample)}
+  (TLS support — WiFiClientSecure, configTime — is built into the ESP32
+  Arduino core, no extra library needed.)
   ------------------------------------------------------------------
   BEFORE UPLOADING:
     1. Fill in your WiFi SSID and password below.
-    2. MQTT_HOST defaults to the address this dashboard was open at
-       (${mqttHost}) when this file was generated. Change it if this
-       device will reach the broker through a different address.
+    2. MQTT_HOST defaults to your IoTStack instance's configured domain
+       (${mqttHost}) — this MUST be a real domain with a valid cert, not
+       an IP, or the TLS handshake below will fail. Change it only if
+       this device will reach the broker through a different domain.
     3. Client ID / username / password below are already filled in for
        THIS device - don't reuse them on another device.
+    4. This device also needs outbound access to UDP/123 (NTP) in
+       addition to TCP/8883 (MQTTS) — both are needed before the first
+       successful connection.
   ------------------------------------------------------------------
 */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 ${sample === "dht11" ? "#include <DHT.h>\n" : ""}
 // ---- WiFi ----
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// ---- MQTT broker ----
+// ---- MQTT broker (MQTTS/TLS only — IoTStack devices never use plain MQTT) ----
 const char* MQTT_HOST = "${mqttHost}";
-const uint16_t MQTT_PORT = 1883; // plain MQTT (see IoTStack README for TLS/WebSocket ports)
+const uint16_t MQTT_PORT = 8883;
+
+// ISRG Root X1 (Let's Encrypt) — every IoTStack MQTTS cert chains to
+// this. Embedded as a raw string literal so the base64 body doesn't need
+// manual "\\n"-per-line escaping (error-prone to hand-generate and easy to
+// silently truncate).
+const char* ROOT_CA = R"EOF(
+${ROOT_CA_PEM}
+)EOF";
 
 // ---- Device credentials (generated for this device - keep private) ----
 const char* MQTT_CLIENT_ID = "${clientId}";
@@ -199,7 +251,7 @@ const unsigned long HEARTBEAT_INTERVAL_MS = 1000;
 unsigned long heartbeatLastToggle = 0;
 bool heartbeatLedOn = false;
 
-WiFiClient wifiClient;
+WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient);
 ${sampleGlobals(sample, board)}
 
@@ -216,6 +268,23 @@ void connectWiFi() {
   Serial.print("\\nWiFi connected, IP: ");
   Serial.println(WiFi.localIP());
 }
+
+void syncTime() {
+  // TLS certificate-validity checking needs a roughly-correct clock —
+  // an ESP32 has no battery-backed RTC and boots at ~1970, which makes
+  // every cert look "not yet valid" until this runs. gmtOffset/
+  // daylightOffset are both 0 on purpose: only a correct moment in time
+  // matters here, not a correct timezone.
+  Serial.print("Syncing time via NTP");
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(300);
+    Serial.print(".");
+    now = time(nullptr);
+  }
+  Serial.println(" done.");
+}
 ${sampleCallback(sample)}
 void reconnectMQTT() {
   while (!mqtt.connected()) {
@@ -223,14 +292,18 @@ void reconnectMQTT() {
     Serial.print(MQTT_HOST);
     Serial.print(":");
     Serial.print(MQTT_PORT);
-    Serial.println("...");
+    Serial.println(" (TLS)...");
     if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
       Serial.println("MQTT connected.");
 ${isRelay ? "      mqtt.subscribe(TOPIC_CMD);\n" : ""}      mqtt.publish(TOPIC_PING, "{\\"event\\":\\"boot\\"}");
     } else {
+      char errBuf[128];
+      wifiClient.lastError(errBuf, sizeof(errBuf));
       Serial.print("MQTT connect failed, rc=");
       Serial.print(mqtt.state());
-      Serial.println(" - retrying in 2s");
+      Serial.print(" (");
+      Serial.print(errBuf);
+      Serial.println(") - retrying in 2s");
       delay(2000);
     }
   }
@@ -253,6 +326,8 @@ void setup() {
   digitalWrite(HEARTBEAT_LED_PIN, HEARTBEAT_LED_OFF);
 
 ${sampleSetupExtra(sample)}  connectWiFi();
+  syncTime();
+  wifiClient.setCACert(ROOT_CA);
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
 ${isRelay ? "  mqtt.setCallback(mqttCallback);\n" : ""}  reconnectMQTT();
 }

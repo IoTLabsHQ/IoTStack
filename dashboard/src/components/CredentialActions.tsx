@@ -1,12 +1,15 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { copyToClipboard } from "../lib/clipboard";
 import { triggerDownload } from "../lib/download";
 import { slugify } from "../lib/slugify";
 import { buildCredentialText, buildCredentialCsv, type CredentialInfo } from "../lib/credentialExport";
+import { getSettings } from "../lib/api/settings";
 
 export function CredentialActions({ credential }: { credential: CredentialInfo }) {
   const [copyLabel, setCopyLabel] = useState("Copy");
-  const host = window.location.hostname;
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
+  const host = settings?.domain || window.location.hostname;
 
   async function handleCopy() {
     const ok = await copyToClipboard(buildCredentialText(credential, host));

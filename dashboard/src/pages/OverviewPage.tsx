@@ -69,6 +69,25 @@ function ResourceWarningBanner() {
   );
 }
 
+function TryTemplateBanner() {
+  return (
+    <Link
+      to="/templates"
+      className="mb-6 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-5 hover:border-slate-300"
+    >
+      <div>
+        <p className="text-sm font-semibold text-slate-900">Try a sample project</p>
+        <p className="text-sm text-slate-500">
+          Go from zero to a working device you can view and control on the web, in a few clicks.
+        </p>
+      </div>
+      <span className="shrink-0 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+        Get started
+      </span>
+    </Link>
+  );
+}
+
 export function OverviewPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["overview"],
@@ -80,6 +99,7 @@ export function OverviewPage() {
     <Shell>
       <h1 className="mb-6 text-lg font-semibold text-slate-900">Overview</h1>
 
+      <TryTemplateBanner />
       <ResourceWarningBanner />
 
       {isLoading || !data ? (

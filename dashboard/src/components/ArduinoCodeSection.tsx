@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BOARDS } from "../lib/arduino/boards";
 import { SAMPLES, type SampleId } from "../lib/arduino/samples";
 import { generateSketch } from "../lib/arduino/generate";
 import { triggerDownload } from "../lib/download";
 import type { CredentialInfo } from "../lib/credentialExport";
+import { getSettings } from "../lib/api/settings";
 
 export function ArduinoCodeSection({
   credential,
@@ -16,6 +18,8 @@ export function ArduinoCodeSection({
   const [boardId, setBoardId] = useState(BOARDS[0].id);
   const [sampleId, setSampleId] = useState<SampleId>(SAMPLES[0].id);
   const selectedSample = SAMPLES.find((s) => s.id === sampleId)!;
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
+  const domain = settings?.domain ?? "";
 
   function handleDownload() {
     const board = BOARDS.find((b) => b.id === boardId)!;
@@ -23,7 +27,7 @@ export function ArduinoCodeSection({
       board,
       sample: sampleId,
       device: credential,
-      mqttHost: window.location.hostname,
+      mqttHost: domain,
     });
     triggerDownload(`${sampleId}_${credential.clientId}.ino`, sketch, "text/x-arduino");
   }
@@ -40,6 +44,17 @@ export function ArduinoCodeSection({
           The generated file has a <code className="font-mono">YOUR_DEVICE_PASSWORD</code>{" "}
           placeholder — paste in the password you saved when this device was created or last
           regenerated. Lost it? Use "Regenerate credential" above to get a new one.
+        </p>
+      )}
+      {!domain && (
+        <p className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          Generated code always connects over secure MQTT (TLS), which needs a real domain with a
+          certificate.{" "}
+          <a href="/settings" className="underline">
+            Set a domain on the Settings page
+          </a>{" "}
+          first — download unlocks once one is configured (allow up to ~30s after saving for the
+          certificate to propagate to the broker).
         </p>
       )}
       <div className="grid grid-cols-2 gap-4">
@@ -75,7 +90,8 @@ export function ArduinoCodeSection({
       </div>
       <button
         onClick={handleDownload}
-        className="mt-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        disabled={!domain}
+        className="mt-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
       >
         Download .ino
       </button>

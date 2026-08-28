@@ -36,6 +36,11 @@ export const DOC_GROUPS = [
         num: "006",
         title: { en: "Control panels", vi: "Control Panel" },
       },
+      {
+        slug: "quickstart",
+        num: "007",
+        title: { en: "Quick start", vi: "Bắt đầu nhanh" },
+      },
     ],
   },
   {
