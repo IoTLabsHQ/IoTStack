@@ -7,9 +7,10 @@ import { BOARDS } from "../lib/arduino/boards";
 import { TEMPLATES } from "../lib/templates-manifest";
 import { useDocsLang } from "../lib/docsLang";
 import { getSettings } from "../lib/api/settings";
-import { createDevice } from "../lib/api/devices";
+import { createDevice, listDevices } from "../lib/api/devices";
 import { saveDashboard, type Control, type ControlType, type WidgetType } from "../lib/api/control";
 import { triggerDownload } from "../lib/download";
+import { buildUniqueProjectName, normalizeProjectName } from "../lib/projectName";
 
 interface TemplateControlDef {
   label: { en: string; vi: string };
@@ -121,7 +122,14 @@ export function TemplateDetailPage() {
     let deviceId: number;
     let credential: { clientId: string; mqttUsername: string; password: string };
     try {
-      const created = await createDevice(`${templateDef!.title.en} - ${board.label}`);
+      const existingDevices = await listDevices();
+      const existingNormalized = new Set(
+        existingDevices.devices.map((d) => normalizeProjectName(d.display_name)),
+      );
+      const baseName = normalizeProjectName(`${templateDef!.title[lang]} - ${board.label}`);
+      const projectName = buildUniqueProjectName(baseName, existingNormalized);
+
+      const created = await createDevice(projectName);
       deviceId = created.device.id;
       credential = {
         clientId: created.device.clientId,

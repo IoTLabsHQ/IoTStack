@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { ControlWidget } from "../components/widgets/ControlWidget";
+import { DeviceOnlineStatus } from "../components/DeviceOnlineStatus";
 import { getDevice, getDeviceMessages, sendCommand } from "../lib/api/devices";
 import {
   CONTROL_TYPE_LABELS,
@@ -142,7 +143,12 @@ export function ControlDetailPage() {
         &larr; Control
       </Link>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">{device.display_name}</h1>
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">{device.display_name}</h1>
+          <div className="mt-1">
+            <DeviceOnlineStatus lastSeenAt={device.last_seen_at} />
+          </div>
+        </div>
         {editing ? (
           <button
             onClick={() => saveMutation.mutate(draft)}
