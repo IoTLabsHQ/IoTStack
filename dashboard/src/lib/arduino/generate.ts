@@ -8,6 +8,9 @@ export interface GenerateSketchInput {
   sample: SampleId;
   device: CredentialInfo;
   mqttHost: string;
+  /** Baked into FIRMWARE_VERSION — reported in the boot event and, after an
+   * OTA update, as the "to" version in firmware.updated. */
+  firmwareVersion: string;
 }
 
 // ISRG Root X1 (Let's Encrypt) — every IoTStack MQTTS cert chains to this
@@ -49,6 +52,13 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 
 function sanitizeForComment(s: string): string {
   return s.replace(/\*\//g, "* /").replace(/[\r\n]+/g, " ");
+}
+
+/** Embeds a user-supplied string as a C string literal body — escapes `\`
+ * and `"` and strips newlines, so a firmware version like `1.0"; while(1);
+ * //` can't break out of the literal in the generated .ino. */
+function sanitizeForCString(s: string): string {
+  return s.replace(/[\r\n]+/g, " ").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
 function requiredLibraries(sample: SampleId): string {
@@ -129,6 +139,7 @@ function mqttCallbackBody(sample: SampleId): string {
     sample === "relay"
       ? `  if (strcmp(command, "set") == 0 && strcmp(data["target"] | "", RELAY_TARGET_NAME) == 0) {
     applyRelay(data["value"] | false);
+    return;
   }`
       : `  // this sample has no controllable target — a "set" command lands
   // here as a no-op`;
@@ -143,9 +154,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print(": ");
   Serial.println(body);
 
-  // Expected envelope (what the dashboard's "Send a command" form and the
-  // API's other command sources all publish): {"command":"...","request_id":"...","data":{...}}
-  StaticJsonDocument<512> doc;
+  // Expected envelope (what the dashboard's "Send a command" form, ota.routes.ts,
+  // and every other command source all publish): {"command":"...","request_id":"...","data":{...}}
+  StaticJsonDocument<768> doc;
   DeserializationError parseErr = deserializeJson(doc, body);
   if (parseErr) {
     Serial.print("Command JSON parse failed: ");
@@ -154,7 +165,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   }
   const char* command = doc["command"];
   if (command == nullptr) return;
+  const char* requestId = doc["request_id"] | "";
   JsonObject data = doc["data"];
+
+  if (strcmp(command, "ota.start") == 0) {
+    handleOtaStart(requestId, data);
+    return;
+  }
 
 ${setHandler}
 }
@@ -185,7 +202,7 @@ function sampleLoopBody(sample: SampleId): string {
   return "";
 }
 
-export function generateSketch({ board, sample, device, mqttHost }: GenerateSketchInput): string {
+export function generateSketch({ board, sample, device, mqttHost, firmwareVersion }: GenerateSketchInput): string {
   const sampleDef = SAMPLES.find((s) => s.id === sample)!;
   const clientId = device.clientId;
   const isRelay = sample === "relay";
@@ -221,7 +238,14 @@ ${requiredLibraries(sample)}
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <HTTPUpdate.h>
+#include <Preferences.h>
+#include "esp_ota_ops.h"
 ${sample === "dht11" ? "#include <DHT.h>\n" : ""}
+// ---- Firmware version (bumped each time you regenerate for a new OTA
+// release) — reported on boot and as the "to" version after an OTA update. ----
+#define FIRMWARE_VERSION "${sanitizeForCString(firmwareVersion)}"
+
 // ---- WiFi ----
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
@@ -270,6 +294,15 @@ unsigned long lastPing = 0;
 
 WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient);
+
+// ---- OTA (firmware update) ----
+Preferences otaPrefs;
+// Set from NVS in setup() when the PREVIOUS boot just flashed new firmware
+// and is waiting to confirm it works — see attemptBoundedOtaConfirmation()
+// and the firmware.updated publish in reconnectMQTT() below.
+bool otaConfirmPending = false;
+String otaFromVersion;
+String otaRequestId;
 ${sampleGlobals(sample, board)}
 
 void connectWiFi() {
@@ -302,6 +335,106 @@ void syncTime() {
   }
   Serial.println(" done.");
 }
+
+// ---- OTA handling ----
+
+void publishOtaStatus(const char* requestId, const char* state) {
+  char payload[160];
+  snprintf(payload, sizeof(payload), "{\\"ota\\":{\\"request_id\\":\\"%s\\",\\"state\\":\\"%s\\"}}", requestId, state);
+  mqtt.publish(TOPIC_STATUS, payload);
+  Serial.println(payload);
+}
+
+void publishOtaFailedEvent(const char* requestId, const char* reason) {
+  char payload[224];
+  snprintf(
+    payload, sizeof(payload),
+    "{\\"type\\":\\"firmware.update_failed\\",\\"data\\":{\\"reason\\":\\"%s\\",\\"request_id\\":\\"%s\\"}}",
+    reason, requestId
+  );
+  mqtt.publish(TOPIC_EVENT, payload);
+  Serial.println(payload);
+}
+
+// Handles {"command":"ota.start","request_id":"...","data":{"version","download_url","size_bytes","md5"}}.
+// Delivered over MQTT, but the firmware binary itself is fetched over a
+// direct HTTPS download (device→server), never through MQTT — the broker's
+// per-message bounds are sized for small JSON, not multi-hundred-KB binaries.
+void handleOtaStart(const char* requestId, JsonObject data) {
+  // Runtime guard, not just a compile-time assumption: refuses to attempt a
+  // flash if this board's currently-selected Partition Scheme has no second
+  // OTA app slot (e.g. someone previously chose "Huge App (No OTA)").
+  if (esp_ota_get_next_update_partition(NULL) == NULL) {
+    publishOtaFailedEvent(requestId, "no_ota_partition");
+    return;
+  }
+
+  const char* url = data["download_url"];
+  if (url == nullptr) {
+    publishOtaFailedEvent(requestId, "missing_download_url");
+    return;
+  }
+
+  publishOtaStatus(requestId, "downloading");
+
+  WiFiClientSecure otaClient;
+  otaClient.setCACert(ROOT_CA);
+  // We do our own bookkeeping (NVS flag + status publish) between a
+  // successful flash and the reboot, so HTTPUpdate must not reboot for us.
+  httpUpdate.rebootOnUpdate(false);
+
+  // NOTE: HTTPUpdate::update() blocks for the whole download+flash — mqtt.loop()
+  // isn't serviced during that window, so ota.cancel can't be received or
+  // acted on mid-transfer (the server already accounts for this — see
+  // ota.routes.ts). A long download can also exceed the MQTT keepalive if
+  // it's slow enough to disconnect the broker session; that's a known,
+  // accepted tradeoff of triggering OTA over the same MQTT connection used
+  // for everything else, not something this generator works around.
+  publishOtaStatus(requestId, "flashing");
+  t_httpUpdate_return ret = httpUpdate.update(otaClient, url);
+
+  if (ret == HTTP_UPDATE_OK) {
+    // x-MD5 verification already happened inside httpUpdate.update() itself
+    // (it reads the response header and calls Update.setMD5() automatically)
+    // — reaching HTTP_UPDATE_OK means the image passed that check.
+    otaPrefs.begin("ota", false);
+    otaPrefs.putBool("pending", true);
+    otaPrefs.putString("from_ver", FIRMWARE_VERSION);
+    otaPrefs.putString("req_id", requestId);
+    otaPrefs.end();
+    publishOtaStatus(requestId, "flash_ok");
+    delay(200); // let the publish above actually leave the socket before it goes away
+    ESP.restart();
+  } else {
+    char reason[64];
+    snprintf(reason, sizeof(reason), "http_update_failed_%d", (int)ret);
+    publishOtaFailedEvent(requestId, reason);
+  }
+}
+
+// Bounded self-check after an OTA reboot (PRD-adjacent safety net, not part
+// of the base spec): a bad image that can't even reach WiFi must not hang
+// forever the way a normal cold boot's infinite connectWiFi() retry would.
+// Deliberately checks ONLY WiFi within the deadline, not the full MQTT
+// handshake — MQTT_HOST/ROOT_CA/credentials don't change between OTA
+// versions the way application code does, so a WiFi-reachable image that
+// can't reach the broker is a much rarer failure mode than one that can't
+// even associate; the normal (infinite-retry) reconnectMQTT() below still
+// runs afterwards for that remaining case, matching existing boot behavior.
+void attemptBoundedOtaConfirmation() {
+  const unsigned long deadline = millis() + 60000;
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (millis() < deadline) {
+    if (WiFi.status() == WL_CONNECTED) return; // confirmed — normal setup() continues below
+    delay(300);
+  }
+
+  Serial.println("OTA confirmation failed (no WiFi within 60s) - rolling back.");
+  const esp_partition_t* previous = esp_ota_get_next_update_partition(NULL);
+  if (previous != NULL) esp_ota_set_boot_partition(previous);
+  ESP.restart();
+}
 ${sampleCallback(sample)}${mqttCallbackBody(sample)}
 void reconnectMQTT() {
   while (!mqtt.connected()) {
@@ -318,6 +451,20 @@ void reconnectMQTT() {
       mqtt.subscribe(TOPIC_CMD);
       mqtt.publish(TOPIC_EVENT, "{\\"type\\":\\"boot\\"}");
 ${isRelay ? "      applyRelay(relayState); // report actual current state right after boot (PRD §12)\n" : ""}
+      if (otaConfirmPending) {
+        char payload[224];
+        snprintf(
+          payload, sizeof(payload),
+          "{\\"type\\":\\"firmware.updated\\",\\"data\\":{\\"from\\":\\"%s\\",\\"to\\":\\"%s\\",\\"request_id\\":\\"%s\\"}}",
+          otaFromVersion.c_str(), FIRMWARE_VERSION, otaRequestId.c_str()
+        );
+        mqtt.publish(TOPIC_EVENT, payload);
+        Serial.println(payload);
+        otaPrefs.begin("ota", false);
+        otaPrefs.clear();
+        otaPrefs.end();
+        otaConfirmPending = false;
+      }
     } else {
       char errBuf[128];
       wifiClient.lastError(errBuf, sizeof(errBuf));
@@ -347,7 +494,19 @@ void setup() {
   pinMode(HEARTBEAT_LED_PIN, OUTPUT);
   digitalWrite(HEARTBEAT_LED_PIN, HEARTBEAT_LED_OFF);
 
-${sampleSetupExtra(sample)}  connectWiFi();
+${sampleSetupExtra(sample)}
+  otaPrefs.begin("ota", true);
+  otaConfirmPending = otaPrefs.getBool("pending", false);
+  otaFromVersion = otaPrefs.getString("from_ver", "");
+  otaRequestId = otaPrefs.getString("req_id", "");
+  otaPrefs.end();
+  // Bounded self-check right after an OTA reboot — rolls back and never
+  // returns if this image can't even reach WiFi within 60s. A normal boot
+  // (otaConfirmPending false) skips straight to the usual infinite-retry
+  // connectWiFi() below, unchanged.
+  if (otaConfirmPending) attemptBoundedOtaConfirmation();
+
+  connectWiFi();
   syncTime();
   wifiClient.setCACert(ROOT_CA);
   mqtt.setServer(MQTT_HOST, MQTT_PORT);

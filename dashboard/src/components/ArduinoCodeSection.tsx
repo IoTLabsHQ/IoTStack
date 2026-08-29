@@ -20,6 +20,7 @@ export function ArduinoCodeSection({
 }) {
   const [boardId, setBoardId] = useState(BOARDS[0].id);
   const [sampleId, setSampleId] = useState<SampleId>(SAMPLES[0].id);
+  const [firmwareVersion, setFirmwareVersion] = useState("1.0.0");
   const selectedSample = SAMPLES.find((s) => s.id === sampleId)!;
   const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: getSettings });
   const domain = settings?.domain ?? "";
@@ -31,6 +32,7 @@ export function ArduinoCodeSection({
       sample: sampleId,
       device: credential,
       mqttHost: domain,
+      firmwareVersion: firmwareVersion.trim() || "1.0.0",
     });
     triggerDownload(`${sampleId}_${credential.clientId}.ino`, sketch, "text/x-arduino");
     // Records which chip this device runs — needed later so OTA can refuse
@@ -94,6 +96,20 @@ export function ArduinoCodeSection({
           </select>
           <p className="mt-1 text-xs text-slate-500">{selectedSample.description}</p>
         </div>
+      </div>
+      <div className="mt-4">
+        <label className="mb-1 block text-xs text-slate-500">Firmware version</label>
+        <input
+          value={firmwareVersion}
+          onChange={(e) => setFirmwareVersion(e.target.value)}
+          placeholder="1.0.0"
+          data-testid="arduino-firmware-version-input"
+          className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm sm:w-48"
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Bump this each time you regenerate for a new release — it's what OTA jobs report as the
+          "to" version.
+        </p>
       </div>
       <button
         onClick={handleDownload}
