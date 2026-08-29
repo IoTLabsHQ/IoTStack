@@ -13,6 +13,7 @@ import { devicesRouter } from "./devices.routes";
 import { statsRouter } from "./stats.routes";
 import { settingsRouter } from "./settings.routes";
 import { resourcesRouter } from "./resources.routes";
+import { firmwareRouter } from "./firmware.routes";
 import { writeDomainFile } from "./settings-sync";
 import { pushCaddyConfig } from "./caddy-client";
 
@@ -48,6 +49,7 @@ async function main(): Promise<void> {
   app.use("/stats", statsRouter);
   app.use("/settings", settingsRouter);
   app.use("/resources", resourcesRouter);
+  app.use("/firmware", firmwareRouter);
 
   app.get("/health", (_req, res) => {
     if (getCollectorStatus() === "disconnected") {

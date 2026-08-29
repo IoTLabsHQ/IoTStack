@@ -5,6 +5,16 @@ export const config = {
     path: process.env.DB_PATH ?? "/data/iotstack.db",
   },
 
+  firmware: {
+    // Same api_data volume the DB lives in — no new volume needed.
+    dir: process.env.FIRMWARE_DIR ?? "/data/firmware",
+    // A .bin must fit inside a single ESP32 OTA app-partition slot with
+    // margin; boards.ts's otaAppSlotBytes is 1_310_720 for every board this
+    // project supports today, so this cap is deliberately generous rather
+    // than per-board — firmware.routes.ts does the real per-board check.
+    maxUploadBytes: parseInt(process.env.FIRMWARE_MAX_UPLOAD_BYTES ?? "2097152", 10),
+  },
+
   mosquitto: {
     host: process.env.MOSQUITTO_HOST ?? "localhost",
     port: parseInt(process.env.MOSQUITTO_PORT ?? "1883", 10),

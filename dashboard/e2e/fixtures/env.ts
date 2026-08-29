@@ -52,6 +52,19 @@ export async function deleteSeedDevice(token: string, id: number): Promise<void>
   });
 }
 
+export async function deleteFirmwareVersionsForBoard(token: string, boardId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/firmware?board_id=${boardId}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  const { firmwareVersions } = (await res.json()) as { firmwareVersions: { id: number }[] };
+  for (const fw of firmwareVersions) {
+    await fetch(`${API_BASE_URL}/firmware/${fw.id}`, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${token}` },
+    });
+  }
+}
+
 export async function publishRealEvent(device: SeedDevice, payload: unknown): Promise<void> {
   const client: MqttClient = mqtt.connect(MQTT_URL, {
     username: device.clientId,

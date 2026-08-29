@@ -25,6 +25,7 @@ import {
   validateAndNormalizeControls,
   denormalizeControls,
 } from "./dashboard-config";
+import { VALID_BOARD_IDS } from "./board-ids";
 
 const VALID_COMMANDS = new Set(["set", "status.request", "config.update", "restart", "ping"]);
 const COMMAND_TIMEOUT_MS: Record<string, number> = {
@@ -50,11 +51,6 @@ interface DeviceRow {
   board_id: string | null;
   firmware_version: string | null;
 }
-
-// Mirrors dashboard/src/lib/arduino/boards.ts's BoardDef ids — api and
-// dashboard are separate packages with no shared module, so this is kept
-// in sync by hand, same as VALID_COMMANDS/DEVICE_COMMANDS already are.
-const VALID_BOARD_IDS = new Set(["esp32-devkit-v1-30pin", "esp32-devkit-v1-38pin", "esp32-c3-supermini"]);
 
 function generateClientId(): string {
   return `dev_${randomBytes(6).toString("hex")}`;

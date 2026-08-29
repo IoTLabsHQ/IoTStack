@@ -93,6 +93,22 @@ CREATE TABLE IF NOT EXISTS resource_samples_daily (
   PRIMARY KEY (target, bucket)
 );
 
+CREATE TABLE IF NOT EXISTS firmware_versions (
+  id INTEGER PRIMARY KEY,
+  board_id TEXT NOT NULL,
+  version TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  md5_hex TEXT NOT NULL,
+  notes TEXT,
+  uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+  uploaded_by INTEGER REFERENCES admin_users(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_firmware_versions_board_version
+  ON firmware_versions(board_id, version);
+
 CREATE TABLE IF NOT EXISTS resource_thresholds (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   host_ram_warn_pct INTEGER NOT NULL DEFAULT 70,
