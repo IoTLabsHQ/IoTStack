@@ -30,9 +30,8 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-primary-800">IoTStack</h1>
-        <p className="mb-1 text-[11px] font-medium text-slate-400">v{__APP_VERSION__}</p>
-        <p className="mb-6 text-sm text-slate-500">Sign in to manage your devices.</p>
+        <h1 className="text-center text-xl font-semibold text-primary-800">IoTStack</h1>
+        <p className="mb-6 text-center text-sm text-slate-500">Sign in to manage your devices.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -69,6 +68,8 @@ export function LoginPage() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-[11px] font-medium text-slate-400">v{__APP_VERSION__}</p>
       </div>
     </div>
   );
