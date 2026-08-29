@@ -15,6 +15,7 @@ import { getDb } from "./db";
 import { checkRateLimit } from "./rate-limiter";
 import { incrementStorageIfUnderCap } from "./storage";
 import { COLLECTOR_TOPICS, DEVICE_MESSAGE_TYPES } from "./mqtt-topics";
+import { handleOtaStatusMessage, handleOtaEventMessage } from "./ota-correlation";
 
 const VALID_MESSAGE_TYPES = new Set<string>(DEVICE_MESSAGE_TYPES);
 
@@ -135,6 +136,9 @@ async function handleMessage(topic: string, payload: Buffer): Promise<void> {
   getDb()
     .prepare("UPDATE devices SET last_seen_at = datetime('now') WHERE id = ?")
     .run(device.id);
+
+  if (messageType === "status") handleOtaStatusMessage(device.id, payloadStr);
+  if (messageType === "event") handleOtaEventMessage(device.id, payloadStr);
 
   logger.info(`[${messageType}] ${topic}`);
 }

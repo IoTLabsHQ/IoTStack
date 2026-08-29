@@ -109,6 +109,34 @@ CREATE TABLE IF NOT EXISTS firmware_versions (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_firmware_versions_board_version
   ON firmware_versions(board_id, version);
 
+CREATE TABLE IF NOT EXISTS ota_jobs (
+  id INTEGER PRIMARY KEY,
+  firmware_version_id INTEGER NOT NULL REFERENCES firmware_versions(id),
+  target_mode TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'running',
+  batch_size INTEGER NOT NULL DEFAULT 5,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_by INTEGER REFERENCES admin_users(id),
+  completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ota_job_targets (
+  id INTEGER PRIMARY KEY,
+  ota_job_id INTEGER NOT NULL REFERENCES ota_jobs(id) ON DELETE CASCADE,
+  device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  request_id TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'pending',
+  error_message TEXT,
+  download_token TEXT,
+  from_version TEXT,
+  to_version TEXT,
+  sent_at TEXT,
+  last_update_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ota_job_targets_job ON ota_job_targets(ota_job_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ota_job_targets_request_id ON ota_job_targets(request_id);
+CREATE INDEX IF NOT EXISTS idx_ota_job_targets_device ON ota_job_targets(device_id);
+
 CREATE TABLE IF NOT EXISTS resource_thresholds (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   host_ram_warn_pct INTEGER NOT NULL DEFAULT 70,

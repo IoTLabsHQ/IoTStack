@@ -32,3 +32,9 @@ export const DEVICE_COMMANDS = [
   "ping",
 ] as const;
 export type DeviceCommand = (typeof DEVICE_COMMANDS)[number];
+
+/** OTA commands — published only from ota.routes.ts (never the generic
+ * `POST /devices/:id/commands` form), so kept out of DEVICE_COMMANDS above:
+ * they carry request_id/token bookkeeping the generic endpoint doesn't have. */
+export const OTA_COMMANDS = ["ota.start", "ota.cancel"] as const;
+export type OtaCommand = (typeof OTA_COMMANDS)[number];

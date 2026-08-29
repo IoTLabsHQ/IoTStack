@@ -73,6 +73,7 @@ else
     DYNSEC_CONTROLLER_PASSWORD="$(openssl rand -base64 24)"
     MQTT_COLLECTOR_PASSWORD="$(openssl rand -base64 24)"
     MQTT_API_COMMAND_PASSWORD="$(openssl rand -base64 24)"
+    OTA_DOWNLOAD_SECRET="$(openssl rand -base64 32)"
 
     sed -i.bak \
         -e "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=${ADMIN_EMAIL}|" \
@@ -81,6 +82,7 @@ else
         -e "s|^DYNSEC_CONTROLLER_PASSWORD=.*|DYNSEC_CONTROLLER_PASSWORD=${DYNSEC_CONTROLLER_PASSWORD}|" \
         -e "s|^MQTT_COLLECTOR_PASSWORD=.*|MQTT_COLLECTOR_PASSWORD=${MQTT_COLLECTOR_PASSWORD}|" \
         -e "s|^MQTT_API_COMMAND_PASSWORD=.*|MQTT_API_COMMAND_PASSWORD=${MQTT_API_COMMAND_PASSWORD}|" \
+        -e "s|^OTA_DOWNLOAD_SECRET=.*|OTA_DOWNLOAD_SECRET=${OTA_DOWNLOAD_SECRET}|" \
         .env
 
     if [[ -n "${DOMAIN}" ]]; then

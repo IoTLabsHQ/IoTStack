@@ -14,6 +14,8 @@ import { statsRouter } from "./stats.routes";
 import { settingsRouter } from "./settings.routes";
 import { resourcesRouter } from "./resources.routes";
 import { firmwareRouter } from "./firmware.routes";
+import { otaRouter } from "./ota.routes";
+import { startOtaTimeoutSweep } from "./ota-timeout-sweep";
 import { writeDomainFile } from "./settings-sync";
 import { pushCaddyConfig } from "./caddy-client";
 
@@ -29,6 +31,7 @@ async function main(): Promise<void> {
   startRetentionSweep();
   startResourceCollector();
   startResourceRollupSweep();
+  startOtaTimeoutSweep();
 
   // Self-heal: re-sync the shared domain file and Caddy's live config from
   // the DB (source of truth) on every boot, in case either volume was ever
@@ -50,6 +53,7 @@ async function main(): Promise<void> {
   app.use("/settings", settingsRouter);
   app.use("/resources", resourcesRouter);
   app.use("/firmware", firmwareRouter);
+  app.use("/ota", otaRouter);
 
   app.get("/health", (_req, res) => {
     if (getCollectorStatus() === "disconnected") {

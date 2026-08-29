@@ -42,6 +42,22 @@ export const config = {
 
   sessionSecret: process.env.SESSION_SECRET ?? "",
 
+  ota: {
+    // Signs the stateless firmware-download token — separate from
+    // sessionSecret because a leaked download secret should never also
+    // grant dashboard session forgery, and vice versa.
+    downloadSecret: process.env.OTA_DOWNLOAD_SECRET ?? "",
+    downloadTokenTtlSeconds: parseInt(process.env.OTA_DOWNLOAD_TOKEN_TTL_SECONDS ?? "1800", 10),
+    defaultBatchSize: parseInt(process.env.OTA_DEFAULT_BATCH_SIZE ?? "5", 10),
+    targetTimeoutSeconds: parseInt(process.env.OTA_TARGET_TIMEOUT_SECONDS ?? "600", 10),
+    jobMaxAgeHours: parseInt(process.env.OTA_JOB_MAX_AGE_HOURS ?? "24", 10),
+    sweepIntervalSeconds: parseInt(process.env.OTA_SWEEP_INTERVAL_SECONDS ?? "15", 10),
+  },
+
+  // "Online" is a staleness heuristic, not a live socket claim — threshold
+  // = ping_interval(5s) * safety_multiplier(3), per PRD §29's own guidance.
+  onlineThresholdSeconds: parseInt(process.env.ONLINE_THRESHOLD_SECONDS ?? "15", 10),
+
   domain: process.env.DOMAIN ?? "",
 
   settingsShared: {

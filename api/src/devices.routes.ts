@@ -26,6 +26,7 @@ import {
   denormalizeControls,
 } from "./dashboard-config";
 import { VALID_BOARD_IDS } from "./board-ids";
+import { config } from "./config";
 
 const VALID_COMMANDS = new Set(["set", "status.request", "config.update", "restart", "ping"]);
 const COMMAND_TIMEOUT_MS: Record<string, number> = {
@@ -60,13 +61,23 @@ function generatePassword(): string {
   return randomBytes(16).toString("hex");
 }
 
-devicesRouter.get("/", (_req, res) => {
+devicesRouter.get("/", (req, res) => {
+  const onlineOnly = req.query.online_only === "true";
   const devices = getDb()
     .prepare(
-      `SELECT id, client_id, mqtt_username, display_name, created_at, updated_at, last_seen_at
-       FROM devices ORDER BY created_at DESC`,
+      `SELECT id, client_id, mqtt_username, display_name, created_at, updated_at, last_seen_at,
+              board_id, firmware_version,
+              (last_seen_at IS NOT NULL AND last_seen_at > datetime('now', '-' || ? || ' seconds')) AS online
+       FROM devices
+       ${onlineOnly ? "WHERE last_seen_at IS NOT NULL AND last_seen_at > datetime('now', '-' || ? || ' seconds')" : ""}
+       ORDER BY created_at DESC`,
     )
-    .all();
+    .all(
+      ...(onlineOnly
+        ? [config.onlineThresholdSeconds, config.onlineThresholdSeconds]
+        : [config.onlineThresholdSeconds]),
+    )
+    .map((d: unknown) => ({ ...(d as Record<string, unknown>), online: Boolean((d as { online: number }).online) }));
   res.json({ devices });
 });
 
@@ -83,8 +94,14 @@ devicesRouter.get("/:id", (req, res) => {
     return;
   }
   const { dashboard, ...rest } = device;
+  // "Z" appended before parsing — SQLite's datetime('now') is UTC without a
+  // timezone marker, the same convention dashboard/src/lib/relativeTime.ts
+  // already follows for this exact reason.
+  const online = device.last_seen_at
+    ? Date.now() - new Date(`${device.last_seen_at}Z`).getTime() <= config.onlineThresholdSeconds * 1000
+    : false;
   res.json({
-    device: { ...rest, dashboard: denormalizeControls(parseDashboardConfig(dashboard).controls) },
+    device: { ...rest, online, dashboard: denormalizeControls(parseDashboardConfig(dashboard).controls) },
   });
 });
 

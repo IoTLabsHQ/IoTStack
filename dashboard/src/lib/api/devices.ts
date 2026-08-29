@@ -12,6 +12,7 @@ export interface Device {
   dashboard: Control[];
   board_id: string | null;
   firmware_version: string | null;
+  online: boolean;
 }
 
 export interface Message {
