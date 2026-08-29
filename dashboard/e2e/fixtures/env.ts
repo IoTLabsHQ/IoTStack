@@ -52,6 +52,48 @@ export async function deleteSeedDevice(token: string, id: number): Promise<void>
   });
 }
 
+/** OTA job creation requires a real domain configured (same precondition as
+ * generated device firmware needing MQTTS) — ensures one is set so OTA e2e
+ * specs work against a freshly-provisioned stack (e.g. in CI), not just a
+ * dev instance a human already configured by hand. */
+export async function ensureDomainConfigured(token: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings`, { headers: { authorization: `Bearer ${token}` } });
+  const { domain } = (await res.json()) as { domain: string };
+  if (domain) return;
+  await fetch(`${API_BASE_URL}/settings/domain`, {
+    method: "PUT",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({ domain: "e2e-test.local" }),
+  });
+}
+
+export async function setDeviceBoard(token: string, deviceId: number, boardId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/devices/${deviceId}/board`, {
+    method: "PUT",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({ boardId }),
+  });
+  if (!res.ok) throw new Error(`device board set failed: ${res.status} ${await res.text()}`);
+}
+
+export async function uploadSeedFirmware(
+  token: string,
+  input: { boardId: string; version: string; content: string },
+): Promise<{ id: number }> {
+  const form = new FormData();
+  form.append("boardId", input.boardId);
+  form.append("version", input.version);
+  form.append("firmware", new Blob([input.content]), "test.bin");
+  const res = await fetch(`${API_BASE_URL}/firmware`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(`firmware upload failed: ${res.status} ${await res.text()}`);
+  const { firmwareVersion } = (await res.json()) as { firmwareVersion: { id: number } };
+  return { id: firmwareVersion.id };
+}
+
 export async function deleteFirmwareVersionsForBoard(token: string, boardId: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/firmware?board_id=${boardId}`, {
     headers: { authorization: `Bearer ${token}` },
@@ -65,7 +107,11 @@ export async function deleteFirmwareVersionsForBoard(token: string, boardId: str
   }
 }
 
-export async function publishRealEvent(device: SeedDevice, payload: unknown): Promise<void> {
+async function publishRealDeviceMessage(
+  device: SeedDevice,
+  messageType: "event" | "status",
+  payload: unknown,
+): Promise<void> {
   const client: MqttClient = mqtt.connect(MQTT_URL, {
     username: device.clientId,
     password: device.password,
@@ -79,7 +125,7 @@ export async function publishRealEvent(device: SeedDevice, payload: unknown): Pr
   });
   await new Promise<void>((resolve, reject) => {
     client.publish(
-      `devices/${device.clientId}/event`,
+      `devices/${device.clientId}/${messageType}`,
       JSON.stringify(payload),
       { qos: 1 },
       (err) => (err ? reject(err) : resolve()),
@@ -87,4 +133,12 @@ export async function publishRealEvent(device: SeedDevice, payload: unknown): Pr
   });
   await new Promise((r) => setTimeout(r, 500));
   client.end();
+}
+
+export async function publishRealEvent(device: SeedDevice, payload: unknown): Promise<void> {
+  await publishRealDeviceMessage(device, "event", payload);
+}
+
+export async function publishRealStatus(device: SeedDevice, payload: unknown): Promise<void> {
+  await publishRealDeviceMessage(device, "status", payload);
 }

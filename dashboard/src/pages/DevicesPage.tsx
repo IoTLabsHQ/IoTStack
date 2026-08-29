@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { createDevice, listDevices, type CreatedDevice } from "../lib/api/devices";
 import { CredentialActions } from "../components/CredentialActions";
@@ -48,9 +48,20 @@ function CreatedCredentialBanner({
 
 export function DevicesPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({ queryKey: ["devices"], queryFn: listDevices });
   const [displayName, setDisplayName] = useState("");
   const [created, setCreated] = useState<CreatedDevice | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const createMutation = useMutation({
     mutationFn: (name: string) => createDevice(name),
@@ -94,41 +105,83 @@ export function DevicesPage() {
       {isLoading ? (
         <p className="text-sm text-slate-500">Loading…</p>
       ) : data && data.devices.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left text-slate-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">Name</th>
-                <th className="px-4 py-2 font-medium">Client ID</th>
-                <th className="px-4 py-2 font-medium">Last seen</th>
-                <th className="px-4 py-2 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.devices.map((d) => (
-                <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3">
-                    <Link to={`/devices/${d.id}`} className="font-medium text-slate-900 hover:underline">
-                      {d.display_name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{d.client_id}</td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {d.last_seen_at ? new Date(d.last_seen_at + "Z").toLocaleString() : "never"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      to={`/devices/${d.id}`}
-                      className="rounded-md border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
-                    >
-                      View
-                    </Link>
-                  </td>
+        <>
+          {selectedIds.size > 0 && (
+            <div className="mb-3 flex items-center justify-between rounded-md border border-primary-200 bg-primary-50 px-4 py-2">
+              <span className="text-sm text-primary-900">{selectedIds.size} device(s) selected</span>
+              <button
+                onClick={() => navigate(`/ota/new?device_ids=${[...selectedIds].join(",")}`)}
+                data-testid="devices-send-ota-button"
+                className="rounded-md bg-primary-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+              >
+                Send OTA to selected
+              </button>
+            </div>
+          )}
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+            <table className="w-full text-sm">
+              <thead className="border-b border-slate-200 text-left text-slate-500">
+                <tr>
+                  <th className="w-8 px-4 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === data.devices.length}
+                      onChange={(e) =>
+                        setSelectedIds(e.target.checked ? new Set(data.devices.map((d) => d.id)) : new Set())
+                      }
+                      data-testid="devices-select-all-checkbox"
+                    />
+                  </th>
+                  <th className="px-4 py-2 font-medium">Name</th>
+                  <th className="px-4 py-2 font-medium">Client ID</th>
+                  <th className="px-4 py-2 font-medium">Board</th>
+                  <th className="px-4 py-2 font-medium">Online</th>
+                  <th className="px-4 py-2 font-medium">Last seen</th>
+                  <th className="px-4 py-2 font-medium">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.devices.map((d) => (
+                  <tr key={d.id} className="border-b border-slate-100 last:border-0">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(d.id)}
+                        onChange={() => toggleSelected(d.id)}
+                        data-testid="devices-row-checkbox"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link to={`/devices/${d.id}`} className="font-medium text-slate-900 hover:underline">
+                        {d.display_name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{d.client_id}</td>
+                    <td className="px-4 py-3 text-slate-500">{d.board_id ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      {d.online ? (
+                        <span className="text-xs font-medium text-emerald-600">online</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">offline</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {d.last_seen_at ? new Date(d.last_seen_at + "Z").toLocaleString() : "never"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/devices/${d.id}`}
+                        className="rounded-md border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <p className="text-sm text-slate-500">No devices yet — create one above.</p>
       )}

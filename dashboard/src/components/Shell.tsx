@@ -8,6 +8,7 @@ export const navItems = [
   { to: "/devices", label: "Devices" },
   { to: "/control", label: "Control" },
   { to: "/firmware", label: "Firmware" },
+  { to: "/ota", label: "OTA" },
   { to: "/resources", label: "Resources" },
   { to: "/settings", label: "Settings" },
   { to: "/docs", label: "Documentation" },

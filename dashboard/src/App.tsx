@@ -14,6 +14,9 @@ import { DocsPage } from "./pages/DocsPage";
 import { ChangelogPage } from "./pages/ChangelogPage";
 import { DocDetailPage } from "./pages/DocDetailPage";
 import { FirmwarePage } from "./pages/FirmwarePage";
+import { OtaJobsPage } from "./pages/OtaJobsPage";
+import { OtaNewJobPage } from "./pages/OtaNewJobPage";
+import { OtaJobDetailPage } from "./pages/OtaJobDetailPage";
 
 function protectedRoute(element: React.ReactNode) {
   return <RequireAuth>{element}</RequireAuth>;
@@ -34,6 +37,9 @@ const router = createBrowserRouter([
   { path: "/templates", element: protectedRoute(<TemplateGalleryPage />) },
   { path: "/templates/:id", element: protectedRoute(<TemplateDetailPage />) },
   { path: "/firmware", element: protectedRoute(<FirmwarePage />) },
+  { path: "/ota", element: protectedRoute(<OtaJobsPage />) },
+  { path: "/ota/new", element: protectedRoute(<OtaNewJobPage />) },
+  { path: "/ota/:id", element: protectedRoute(<OtaJobDetailPage />) },
 ]);
 
 export function App() {
