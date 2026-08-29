@@ -142,20 +142,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 function sampleLoopBody(sample: SampleId): string {
-  if (sample === "blink") {
-    return `
-  // ---- Sample: periodic "still alive" ping over MQTT ----
-  // The LED above already blinks locally; this additionally proves the
-  // full WiFi + MQTT path works end-to-end. Watch it appear under
-  // "Recent messages" on this device's page in the dashboard.
-  static unsigned long lastPing = 0;
-  if (millis() - lastPing >= 5000) {
-    lastPing = millis();
-    mqtt.publish(TOPIC_PING, "{}");
-    Serial.println("Published ping");
-  }
-`;
-  }
   if (sample === "dht11") {
     return `
   // ---- Sample: read DHT11 and publish telemetry ----
@@ -174,7 +160,8 @@ function sampleLoopBody(sample: SampleId): string {
   }
 `;
   }
-  // relay: state changes are driven entirely by the mqtt callback via mqtt.loop()
+  // blink/relay: nothing extra beyond the universal heartbeat/ping above —
+  // relay's state changes are driven entirely by the mqtt callback via mqtt.loop()
   return "";
 }
 
@@ -254,6 +241,12 @@ const unsigned long HEARTBEAT_INTERVAL_MS = 1000;
 unsigned long heartbeatLastToggle = 0;
 bool heartbeatLedOn = false;
 
+// ---- Application-level heartbeat over MQTT (PRD §11/§29) — not MQTT
+// PINGREQ, not the heartbeat LED above. Proves the full WiFi+MQTT path
+// works end-to-end; watch it under "Recent messages" on this device's page.
+const unsigned long PING_INTERVAL_MS = 5000;
+unsigned long lastPing = 0;
+
 WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient);
 ${sampleGlobals(sample, board)}
@@ -302,6 +295,7 @@ void reconnectMQTT() {
     if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD, TOPIC_EVENT, 1, false, "{\\"type\\":\\"network.disconnected\\"}")) {
       Serial.println("MQTT connected.");
 ${isRelay ? "      mqtt.subscribe(TOPIC_CMD);\n" : ""}      mqtt.publish(TOPIC_EVENT, "{\\"type\\":\\"boot\\"}");
+${isRelay ? "      applyRelay(relayState); // report actual current state right after boot (PRD §12)\n" : ""}
     } else {
       char errBuf[128];
       wifiClient.lastError(errBuf, sizeof(errBuf));
@@ -344,6 +338,12 @@ void loop() {
   mqtt.loop();
 
   updateHeartbeat();
+
+  if (millis() - lastPing >= PING_INTERVAL_MS) {
+    lastPing = millis();
+    mqtt.publish(TOPIC_PING, "{}");
+    Serial.println("Published ping");
+  }
 ${sampleLoopBody(sample)}}
 `;
 }

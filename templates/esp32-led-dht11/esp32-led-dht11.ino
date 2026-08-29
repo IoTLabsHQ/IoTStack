@@ -100,6 +100,10 @@ DHT dht(DHT_PIN, DHT_TYPE);
 #endif
 const unsigned long TELEMETRY_INTERVAL_MS = 5000;
 unsigned long lastTelemetry = 0;
+
+// ---- Application-level heartbeat (PRD §11/§29) — not MQTT PINGREQ ----
+const unsigned long PING_INTERVAL_MS = 5000;
+unsigned long lastPing = 0;
 float simTempC = 24.0;
 float simHumidityPct = 55.0;
 
@@ -177,6 +181,7 @@ void reconnectMQTT() {
       Serial.println("MQTT connected.");
       mqtt.subscribe(TOPIC_CMD);
       mqtt.publish(TOPIC_EVENT, "{\"type\":\"boot\"}");
+      applyLed(ledState); // report actual current state right after boot (PRD §12)
     } else {
       char errBuf[128];
       wifiClient.lastError(errBuf, sizeof(errBuf));
@@ -239,5 +244,10 @@ void loop() {
   if (millis() - lastTelemetry >= TELEMETRY_INTERVAL_MS) {
     lastTelemetry = millis();
     publishTelemetry();
+  }
+
+  if (millis() - lastPing >= PING_INTERVAL_MS) {
+    lastPing = millis();
+    mqtt.publish(TOPIC_PING, "{}");
   }
 }
