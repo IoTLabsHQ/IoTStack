@@ -123,8 +123,12 @@ void applyRelay(bool on) {
   relayState = on;
   bool pinHigh = RELAY_ACTIVE_LOW ? !on : on;
   digitalWrite(RELAY_PIN, pinHigh ? HIGH : LOW);
-  char payload[64];
-  snprintf(payload, sizeof(payload), "{\\"target\\":\\"%s\\",\\"state\\":%s}", RELAY_TARGET_NAME, on ? "true" : "false");
+  JsonDocument doc;
+  doc["target"] = RELAY_TARGET_NAME;
+  doc["state"] = on;
+  addDeviceInfo(doc);
+  char payload[192];
+  serializeJson(doc, payload, sizeof(payload));
   mqtt.publish(TOPIC_STATUS, payload);
   Serial.println(payload);
 }
@@ -170,6 +174,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   if (strcmp(command, "ota.start") == 0) {
     handleOtaStart(requestId, data);
+    return;
+  }
+
+  if (strcmp(command, "status.request") == 0) {
+    publishStatusSnapshot(requestId);
     return;
   }
 
@@ -305,6 +314,16 @@ String otaFromVersion;
 String otaRequestId;
 ${sampleGlobals(sample, board)}
 
+// Merged into every ping/status publish below so the server always knows
+// exactly which firmware is running and how strong the WiFi link is,
+// without waiting for the next OTA event or a fresh boot to find out —
+// directly useful for diagnosing a flaky link like the one that stalled an
+// OTA attempt during this feature's own real-hardware testing.
+void addDeviceInfo(JsonDocument &doc) {
+  doc["firmware_version"] = FIRMWARE_VERSION;
+  doc["wifi_rssi"] = WiFi.RSSI();
+}
+
 void connectWiFi() {
   Serial.print("Connecting to WiFi \\"");
   Serial.print(WIFI_SSID);
@@ -339,8 +358,13 @@ void syncTime() {
 // ---- OTA handling ----
 
 void publishOtaStatus(const char* requestId, const char* state) {
-  char payload[160];
-  snprintf(payload, sizeof(payload), "{\\"ota\\":{\\"request_id\\":\\"%s\\",\\"state\\":\\"%s\\"}}", requestId, state);
+  JsonDocument doc;
+  JsonObject ota = doc["ota"].to<JsonObject>();
+  ota["request_id"] = requestId;
+  ota["state"] = state;
+  addDeviceInfo(doc);
+  char payload[224];
+  serializeJson(doc, payload, sizeof(payload));
   mqtt.publish(TOPIC_STATUS, payload);
   Serial.println(payload);
 }
@@ -435,6 +459,20 @@ void attemptBoundedOtaConfirmation() {
   if (previous != NULL) esp_ota_set_boot_partition(previous);
   ESP.restart();
 }
+
+// Answers a server-initiated "status.request" command (PRD §14 whitelist) —
+// an on-demand device check distinct from the periodic ping/status above,
+// so the dashboard can ask "are you really there, and what's your state"
+// instead of waiting for the next scheduled publish.
+void publishStatusSnapshot(const char* requestId) {
+  JsonDocument doc;
+${isRelay ? `  doc["target"] = RELAY_TARGET_NAME;\n  doc["state"] = relayState;\n` : ""}  addDeviceInfo(doc);
+  if (requestId != nullptr && strlen(requestId) > 0) doc["request_id"] = requestId;
+  char payload[224];
+  serializeJson(doc, payload, sizeof(payload));
+  mqtt.publish(TOPIC_STATUS, payload);
+  Serial.println(payload);
+}
 ${sampleCallback(sample)}${mqttCallbackBody(sample)}
 void reconnectMQTT() {
   while (!mqtt.connected()) {
@@ -509,6 +547,12 @@ ${sampleSetupExtra(sample)}
   connectWiFi();
   syncTime();
   wifiClient.setCACert(ROOT_CA);
+  // PubSubClient's default MQTT_MAX_PACKET_SIZE is only 256 bytes — an
+  // ota.start payload (command envelope + a full HTTPS download URL + a
+  // 64-hex-char md5) easily exceeds that. An oversized incoming packet is
+  // silently dropped (callback never fires, no error) rather than erroring,
+  // which is exactly why this needed a real device to catch, not a review.
+  mqtt.setBufferSize(1024);
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setCallback(mqttCallback);
   reconnectMQTT();
@@ -523,8 +567,12 @@ void loop() {
 
   if (millis() - lastPing >= PING_INTERVAL_MS) {
     lastPing = millis();
-    mqtt.publish(TOPIC_PING, "{}");
-    Serial.println("Published ping");
+    JsonDocument pingDoc;
+    addDeviceInfo(pingDoc);
+    char pingPayload[96];
+    serializeJson(pingDoc, pingPayload, sizeof(pingPayload));
+    mqtt.publish(TOPIC_PING, pingPayload);
+    Serial.println(pingPayload);
   }
 ${sampleLoopBody(sample)}}
 `;
