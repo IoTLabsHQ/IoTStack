@@ -42,7 +42,7 @@ export interface DashboardConfig {
 
 export const CONTROL_TYPE_WIDGETS: Record<ControlType, WidgetType[]> = {
   "sensor-numeric": ["label-value", "min-max-current"],
-  toggle: ["toggle-switch"],
+  toggle: ["toggle-switch", "label-value"],
   event: ["latest-event"],
 };
 

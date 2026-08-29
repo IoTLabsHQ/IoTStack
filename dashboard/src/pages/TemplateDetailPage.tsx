@@ -16,7 +16,7 @@ interface TemplateControlDef {
   label: { en: string; vi: string };
   type: ControlType;
   widget: WidgetType;
-  binding: { field?: string; target?: string };
+  binding: { field?: string; target?: string; eventType?: string };
 }
 interface TemplateHardwareItem {
   name: { en: string; vi: string };
@@ -148,12 +148,22 @@ export function TemplateDetailPage() {
             binding: { source: "telemetry", field: c.binding.field! },
           };
         }
+        if (c.type === "event") {
+          return {
+            id: crypto.randomUUID(),
+            label: c.label[lang],
+            type: "event",
+            widget: c.widget,
+            matchingWidgets: ["latest-event"],
+            binding: { source: "event", eventType: c.binding.eventType },
+          };
+        }
         return {
           id: crypto.randomUUID(),
           label: c.label[lang],
           type: "toggle",
           widget: c.widget,
-          matchingWidgets: ["toggle-switch"],
+          matchingWidgets: ["toggle-switch", "label-value"],
           binding: { source: "status", target: c.binding.target!, field: c.binding.field ?? "state" },
         };
       });

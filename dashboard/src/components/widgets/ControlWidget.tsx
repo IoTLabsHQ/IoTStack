@@ -16,6 +16,18 @@ export function ControlWidget({
 }) {
   const value = extractCurrentValue(control, messages);
 
+  if (control.type === "toggle" && control.widget === "label-value") {
+    const isOn = value.current === true;
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-5" data-testid="control-widget-toggle-status">
+        <p className="text-sm text-slate-500">{control.label}</p>
+        <p className="mt-1 text-2xl font-semibold text-slate-900">
+          {value.current === null ? "Unknown" : isOn ? "On" : "Off"}
+        </p>
+      </div>
+    );
+  }
+
   if (control.type === "toggle") {
     const isOn = value.current === true;
     return (

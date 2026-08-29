@@ -9,6 +9,12 @@
       "binding": { "target": "led_1", "field": "state" }
     },
     {
+      "label": { "en": "LED status", "vi": "Trạng thái đèn LED" },
+      "type": "toggle",
+      "widget": "label-value",
+      "binding": { "target": "led_1", "field": "state" }
+    },
+    {
       "label": { "en": "Temperature", "vi": "Nhiệt độ" },
       "type": "sensor-numeric",
       "widget": "label-value",
@@ -19,6 +25,12 @@
       "type": "sensor-numeric",
       "widget": "label-value",
       "binding": { "field": "humidity_pct" }
+    },
+    {
+      "label": { "en": "Latest event", "vi": "Sự kiện gần nhất" },
+      "type": "event",
+      "widget": "latest-event",
+      "binding": {}
     }
   ],
   "hardware": [

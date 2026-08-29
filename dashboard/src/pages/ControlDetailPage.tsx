@@ -47,7 +47,7 @@ function blankControl(type: ControlType): Control {
     label: "",
     type,
     widget,
-    matchingWidgets: ["toggle-switch"],
+    matchingWidgets: ["toggle-switch", "label-value"],
     binding: { source: "status", target: "", field: "state" },
   };
 }
