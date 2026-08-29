@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS devices (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   last_seen_at TEXT,
-  dashboard TEXT
+  dashboard TEXT,
+  board_id TEXT,
+  firmware_version TEXT
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -127,6 +129,14 @@ export function runMigrations(): void {
   if (!columnExists("devices", "dashboard")) {
     getDb().exec(`ALTER TABLE devices ADD COLUMN dashboard TEXT`);
     logger.info('migration: added "dashboard" column to devices table');
+  }
+  if (!columnExists("devices", "board_id")) {
+    getDb().exec(`ALTER TABLE devices ADD COLUMN board_id TEXT`);
+    logger.info('migration: added "board_id" column to devices table');
+  }
+  if (!columnExists("devices", "firmware_version")) {
+    getDb().exec(`ALTER TABLE devices ADD COLUMN firmware_version TEXT`);
+    logger.info('migration: added "firmware_version" column to devices table');
   }
 
   logger.info("database migrations applied");

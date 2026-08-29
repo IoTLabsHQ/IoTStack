@@ -135,6 +135,7 @@ export function DevicesPage() {
 
       {created && (
         <ArduinoCodeSection
+          deviceId={created.device.id}
           credential={{
             displayName: created.device.displayName,
             clientId: created.device.clientId,

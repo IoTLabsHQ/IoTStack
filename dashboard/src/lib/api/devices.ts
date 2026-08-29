@@ -10,6 +10,8 @@ export interface Device {
   updated_at: string;
   last_seen_at: string | null;
   dashboard: Control[];
+  board_id: string | null;
+  firmware_version: string | null;
 }
 
 export interface Message {
@@ -58,6 +60,13 @@ export function getDeviceMessages(
 
 export function getDeviceStorage(id: number): Promise<{ bytes: number }> {
   return apiFetch(`/devices/${id}/storage`);
+}
+
+export function updateDeviceBoard(id: number, boardId: string): Promise<{ boardId: string }> {
+  return apiFetch(`/devices/${id}/board`, {
+    method: "PUT",
+    body: JSON.stringify({ boardId }),
+  });
 }
 
 export function sendCommand(

@@ -6,11 +6,14 @@ import { generateSketch } from "../lib/arduino/generate";
 import { triggerDownload } from "../lib/download";
 import type { CredentialInfo } from "../lib/credentialExport";
 import { getSettings } from "../lib/api/settings";
+import { updateDeviceBoard } from "../lib/api/devices";
 
 export function ArduinoCodeSection({
+  deviceId,
   credential,
   hasRealPassword = true,
 }: {
+  deviceId: number;
   credential: CredentialInfo;
   /** false when `credential.password` is a placeholder, not the device's real one (the API never returns it again after creation/regeneration). */
   hasRealPassword?: boolean;
@@ -30,6 +33,10 @@ export function ArduinoCodeSection({
       mqttHost: domain,
     });
     triggerDownload(`${sampleId}_${credential.clientId}.ino`, sketch, "text/x-arduino");
+    // Records which chip this device runs — needed later so OTA can refuse
+    // to flash a firmware built for the wrong board. Fire-and-forget: a
+    // failure here shouldn't block the download the user is waiting on.
+    updateDeviceBoard(deviceId, boardId).catch(() => {});
   }
 
   return (

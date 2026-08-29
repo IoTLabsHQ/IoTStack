@@ -47,7 +47,14 @@ interface DeviceRow {
   updated_at: string;
   last_seen_at: string | null;
   dashboard: string | null;
+  board_id: string | null;
+  firmware_version: string | null;
 }
+
+// Mirrors dashboard/src/lib/arduino/boards.ts's BoardDef ids — api and
+// dashboard are separate packages with no shared module, so this is kept
+// in sync by hand, same as VALID_COMMANDS/DEVICE_COMMANDS already are.
+const VALID_BOARD_IDS = new Set(["esp32-devkit-v1-30pin", "esp32-devkit-v1-38pin", "esp32-c3-supermini"]);
 
 function generateClientId(): string {
   return `dev_${randomBytes(6).toString("hex")}`;
@@ -70,7 +77,7 @@ devicesRouter.get("/", (_req, res) => {
 devicesRouter.get("/:id", (req, res) => {
   const device = getDb()
     .prepare(
-      `SELECT id, client_id, mqtt_username, display_name, created_at, updated_at, last_seen_at, dashboard
+      `SELECT id, client_id, mqtt_username, display_name, created_at, updated_at, last_seen_at, dashboard, board_id, firmware_version
        FROM devices WHERE id = ?`,
     )
     .get(req.params.id) as DeviceRow | undefined;
@@ -83,6 +90,32 @@ devicesRouter.get("/:id", (req, res) => {
   res.json({
     device: { ...rest, dashboard: denormalizeControls(parseDashboardConfig(dashboard).controls) },
   });
+});
+
+devicesRouter.put("/:id/board", (req, res) => {
+  const device = getDb().prepare("SELECT id FROM devices WHERE id = ?").get(req.params.id) as
+    | { id: number }
+    | undefined;
+  if (!device) {
+    res.status(404).json({ error: "Device not found" });
+    return;
+  }
+
+  try {
+    const boardId = requireString(req.body?.boardId, "boardId");
+    if (!VALID_BOARD_IDS.has(boardId)) {
+      res.status(400).json({ error: `boardId must be one of: ${[...VALID_BOARD_IDS].join(", ")}` });
+      return;
+    }
+    getDb()
+      .prepare(`UPDATE devices SET board_id = ?, updated_at = datetime('now') WHERE id = ?`)
+      .run(boardId, device.id);
+    res.json({ boardId });
+  } catch (err) {
+    if (respondIfValidationError(err, res)) return;
+    logger.error("device board update error:", err);
+    res.status(500).json({ error: "Internal error" });
+  }
 });
 
 devicesRouter.put("/:id/dashboard", (req, res) => {

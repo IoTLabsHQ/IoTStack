@@ -148,6 +148,7 @@ export function DeviceDetailPage() {
       </div>
 
       <ArduinoCodeSection
+        deviceId={device.id}
         credential={{
           displayName: device.display_name,
           clientId: device.client_id,

@@ -52,15 +52,15 @@ function sanitizeForComment(s: string): string {
 }
 
 function requiredLibraries(sample: SampleId): string {
-  const base = '    - "PubSubClient" by Nick O\'Leary';
+  const base = ['    - "PubSubClient" by Nick O\'Leary', '    - "ArduinoJson" by Benoit Blanchon'];
   if (sample === "dht11") {
     return [
-      base,
+      ...base,
       '    - "DHT sensor library" by Adafruit',
       '    - "Adafruit Unified Sensor" by Adafruit',
     ].join("\n");
   }
-  return base;
+  return base.join("\n");
 }
 
 function heartbeatNote(board: BoardDef): string {
@@ -118,7 +118,22 @@ void applyRelay(bool on) {
   mqtt.publish(TOPIC_STATUS, payload);
   Serial.println(payload);
 }
+`;
+}
 
+// Every sample subscribes to TOPIC_CMD and gets a real JSON-parsed command
+// dispatch (not just "relay") so future commands (e.g. an OTA trigger) have
+// one shared entry point regardless of which sample is flashed.
+function mqttCallbackBody(sample: SampleId): string {
+  const setHandler =
+    sample === "relay"
+      ? `  if (strcmp(command, "set") == 0 && strcmp(data["target"] | "", RELAY_TARGET_NAME) == 0) {
+    applyRelay(data["value"] | false);
+  }`
+      : `  // this sample has no controllable target — a "set" command lands
+  // here as a no-op`;
+
+  return `
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String body;
   body.reserve(length);
@@ -128,15 +143,20 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print(": ");
   Serial.println(body);
 
-  // Expected payload (exactly what the dashboard's "Send a command" form
-  // sends): {"command":"set","request_id":"...","data":{"target":"relay_1","value":true}}
-  // A tiny hand-rolled check is used here to avoid pulling in a JSON
-  // library for one field — it looks for the "target"/"command" substrings
-  // regardless of nesting, so it doesn't care that they're now inside
-  // "data" — swap in ArduinoJson if you need more.
-  if (body.indexOf("\\"target\\":\\"" RELAY_TARGET_NAME "\\"") == -1) return;
-  if (body.indexOf("\\"command\\":\\"set\\"") == -1) return;
-  applyRelay(body.indexOf("\\"value\\":true") != -1);
+  // Expected envelope (what the dashboard's "Send a command" form and the
+  // API's other command sources all publish): {"command":"...","request_id":"...","data":{...}}
+  StaticJsonDocument<512> doc;
+  DeserializationError parseErr = deserializeJson(doc, body);
+  if (parseErr) {
+    Serial.print("Command JSON parse failed: ");
+    Serial.println(parseErr.c_str());
+    return;
+  }
+  const char* command = doc["command"];
+  if (command == nullptr) return;
+  JsonObject data = doc["data"];
+
+${setHandler}
 }
 `;
 }
@@ -200,6 +220,7 @@ ${requiredLibraries(sample)}
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 ${sample === "dht11" ? "#include <DHT.h>\n" : ""}
 // ---- WiFi ----
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
@@ -281,7 +302,7 @@ void syncTime() {
   }
   Serial.println(" done.");
 }
-${sampleCallback(sample)}
+${sampleCallback(sample)}${mqttCallbackBody(sample)}
 void reconnectMQTT() {
   while (!mqtt.connected()) {
     Serial.print("Connecting to MQTT broker ");
@@ -294,7 +315,8 @@ void reconnectMQTT() {
     // (network drop, power loss), never on a clean one we trigger ourselves.
     if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD, TOPIC_EVENT, 1, false, "{\\"type\\":\\"network.disconnected\\"}")) {
       Serial.println("MQTT connected.");
-${isRelay ? "      mqtt.subscribe(TOPIC_CMD);\n" : ""}      mqtt.publish(TOPIC_EVENT, "{\\"type\\":\\"boot\\"}");
+      mqtt.subscribe(TOPIC_CMD);
+      mqtt.publish(TOPIC_EVENT, "{\\"type\\":\\"boot\\"}");
 ${isRelay ? "      applyRelay(relayState); // report actual current state right after boot (PRD §12)\n" : ""}
     } else {
       char errBuf[128];
@@ -329,7 +351,8 @@ ${sampleSetupExtra(sample)}  connectWiFi();
   syncTime();
   wifiClient.setCACert(ROOT_CA);
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
-${isRelay ? "  mqtt.setCallback(mqttCallback);\n" : ""}  reconnectMQTT();
+  mqtt.setCallback(mqttCallback);
+  reconnectMQTT();
 }
 
 void loop() {
