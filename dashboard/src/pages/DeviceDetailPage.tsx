@@ -12,6 +12,7 @@ import {
 } from "../lib/api/devices";
 import { CredentialActions } from "../components/CredentialActions";
 import { ArduinoCodeSection } from "../components/ArduinoCodeSection";
+import { DeviceInfoLine } from "../components/DeviceInfoLine";
 
 const COMMANDS = ["ping", "set", "status.request", "config.update", "restart"] as const;
 
@@ -89,7 +90,10 @@ export function DeviceDetailPage() {
   return (
     <Shell>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">{device.display_name}</h1>
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">{device.display_name}</h1>
+          <DeviceInfoLine messages={messagesQuery.data?.messages ?? []} />
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => regenerateMutation.mutate()}

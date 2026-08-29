@@ -1,18 +1,17 @@
-import type { Control } from "../../lib/api/control";
+import type { Control, ToggleControl } from "../../lib/api/control";
 import type { Message } from "../../lib/api/devices";
 import { extractCurrentValue } from "../../lib/control-values";
 import { formatRelativeTimeVi, formatExactTimeVi } from "../../lib/relativeTime";
+import { useControlCommand } from "../../hooks/useControlCommand";
 
 export function ControlWidget({
+  deviceId,
   control,
   messages,
-  onToggle,
-  toggling,
 }: {
+  deviceId: number;
   control: Control;
   messages: Message[];
-  onToggle: (control: Control & { type: "toggle" }, next: boolean) => void;
-  toggling: boolean;
 }) {
   const value = extractCurrentValue(control, messages);
 
@@ -29,31 +28,14 @@ export function ControlWidget({
   }
 
   if (control.type === "toggle") {
-    const isOn = value.current === true;
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
-        <p className="text-sm text-slate-500">{control.label}</p>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-lg font-semibold text-slate-900">
-            {value.current === null ? "Unknown" : isOn ? "On" : "Off"}
-          </span>
-          <button
-            role="switch"
-            aria-checked={isOn}
-            disabled={toggling}
-            onClick={() => onToggle(control, !isOn)}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-              isOn ? "bg-primary-800" : "bg-slate-300"
-            }`}
-          >
-            <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                isOn ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-      </div>
+      <ToggleSwitchWidget
+        deviceId={deviceId}
+        control={control}
+        messages={messages}
+        isOn={value.current === true}
+        unknown={value.current === null}
+      />
     );
   }
 
@@ -101,6 +83,57 @@ export function ControlWidget({
       <p className="mt-1 text-2xl font-semibold text-slate-900">
         {value.current === null ? "—" : value.current}
       </p>
+    </div>
+  );
+}
+
+function ToggleSwitchWidget({
+  deviceId,
+  control,
+  messages,
+  isOn,
+  unknown,
+}: {
+  deviceId: number;
+  control: ToggleControl;
+  messages: Message[];
+  isOn: boolean;
+  unknown: boolean;
+}) {
+  const { pending, send } = useControlCommand(deviceId, control.binding.target, messages);
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <p className="text-sm text-slate-500">{control.label}</p>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-lg font-semibold text-slate-900" data-testid="control-toggle-status">
+          {pending ? "Đang gửi…" : unknown ? "Unknown" : isOn ? "On" : "Off"}
+        </span>
+        <button
+          role="switch"
+          aria-checked={isOn}
+          aria-busy={pending}
+          disabled={pending}
+          data-testid="control-toggle-switch"
+          onClick={() => send("set", !isOn)}
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+            isOn ? "bg-primary-800" : "bg-slate-300"
+          }`}
+        >
+          {pending ? (
+            <span
+              data-testid="control-toggle-spinner"
+              className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin rounded-full border-2 border-white border-t-transparent"
+            />
+          ) : (
+            <span
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                isOn ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          )}
+        </button>
+      </div>
     </div>
   );
 }

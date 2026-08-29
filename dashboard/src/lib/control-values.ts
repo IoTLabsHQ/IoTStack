@@ -69,3 +69,31 @@ export function extractCurrentValue(control: Control, messages: Message[]): Cont
   }
   return EMPTY;
 }
+
+export interface DeviceInfo {
+  firmwareVersion: string | null;
+  wifiRssi: number | null;
+  asOf: string | null;
+}
+
+/**
+ * Reads firmware_version/wifi_rssi from the newest message that carries
+ * them — the generated firmware merges both into every ping and status
+ * payload, but older/hand-written firmware may send neither.
+ */
+export function extractDeviceInfo(messages: Message[]): DeviceInfo {
+  for (const m of messages) {
+    try {
+      const payload = JSON.parse(m.payload);
+      if (typeof payload !== "object" || payload === null) continue;
+      const firmwareVersion = typeof payload.firmware_version === "string" ? payload.firmware_version : null;
+      const wifiRssi = typeof payload.wifi_rssi === "number" ? payload.wifi_rssi : null;
+      if (firmwareVersion !== null || wifiRssi !== null) {
+        return { firmwareVersion, wifiRssi, asOf: m.received_at };
+      }
+    } catch {
+      // skip malformed payload
+    }
+  }
+  return { firmwareVersion: null, wifiRssi: null, asOf: null };
+}

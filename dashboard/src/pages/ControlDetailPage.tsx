@@ -4,7 +4,8 @@ import { Link, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { ControlWidget } from "../components/widgets/ControlWidget";
 import { DeviceOnlineStatus } from "../components/DeviceOnlineStatus";
-import { getDevice, getDeviceMessages, sendCommand } from "../lib/api/devices";
+import { DeviceInfoLine } from "../components/DeviceInfoLine";
+import { getDevice, getDeviceMessages } from "../lib/api/devices";
 import {
   CONTROL_TYPE_LABELS,
   DEFAULT_WIDGET_FOR_TYPE,
@@ -66,7 +67,6 @@ export function ControlDetailPage() {
   const [newEventType, setNewEventType] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const deviceQuery = useQuery({
     queryKey: ["device", deviceId],
@@ -90,12 +90,6 @@ export function ControlDetailPage() {
       setSaveSuccess(false);
       setSaveError(err instanceof ApiError ? err.message : "Failed to save controls");
     },
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: (input: { target: string; value: boolean }) =>
-      sendCommand(deviceId, { target: input.target, command: "set", value: input.value }),
-    onSettled: () => setTogglingId(null),
   });
 
   if (deviceQuery.isLoading || !deviceQuery.data) {
@@ -162,6 +156,7 @@ export function ControlDetailPage() {
           <div className="mt-1">
             <DeviceOnlineStatus lastSeenAt={device.last_seen_at} />
           </div>
+          <DeviceInfoLine messages={messages} />
         </div>
         {editing ? (
           <button
@@ -248,15 +243,7 @@ export function ControlDetailPage() {
                 )}
               </div>
             ) : (
-              <ControlWidget
-                control={control}
-                messages={messages}
-                toggling={togglingId === control.id}
-                onToggle={(c, next) => {
-                  setTogglingId(c.id);
-                  toggleMutation.mutate({ target: c.binding.target, value: next });
-                }}
-              />
+              <ControlWidget deviceId={deviceId} control={control} messages={messages} />
             )}
           </div>
         ))}
@@ -322,6 +309,7 @@ export function ControlDetailPage() {
               <div>
                 <label className="mb-1 block text-xs text-slate-500">Status target</label>
                 <input
+                  data-testid="control-target-input"
                   value={newTarget}
                   onChange={(e) => setNewTarget(e.target.value)}
                   placeholder="e.g. relay_1"
