@@ -1,5 +1,6 @@
 import type { Message } from "./api/devices";
 import type { Control } from "./api/control";
+import { getByPath } from "./message-shapes";
 
 export interface ControlValue {
   current: number | boolean | string | null;
@@ -14,9 +15,9 @@ const EMPTY: ControlValue = { current: null, min: null, max: null, asOf: null };
 
 /**
  * Reads a control's current/min/max from the device's recent message
- * feed. Telemetry payloads are flat and keyed by field name; status
- * payloads carry a `target`; event payloads carry a `type`. Malformed
- * payloads are skipped, not thrown.
+ * feed. `binding.field` may be a dot-path (`gps.lat`) into a nested
+ * payload — resolved via getByPath. Status payloads carry a `target`;
+ * event payloads carry a `type`. Malformed payloads are skipped, not thrown.
  */
 export function extractCurrentValue(control: Control, messages: Message[]): ControlValue {
   if (control.type === "sensor-numeric") {
@@ -25,7 +26,7 @@ export function extractCurrentValue(control: Control, messages: Message[]): Cont
       if (m.message_type !== "telemetry") continue;
       try {
         const payload = JSON.parse(m.payload);
-        const value = payload[control.binding.field];
+        const value = getByPath(payload, control.binding.field);
         if (typeof value === "number") values.push(value);
       } catch {
         // skip malformed payload
@@ -61,7 +62,7 @@ export function extractCurrentValue(control: Control, messages: Message[]): Cont
     try {
       const payload = JSON.parse(m.payload);
       if (payload.target !== control.binding.target) continue;
-      const value = payload[control.binding.field];
+      const value = getByPath(payload, control.binding.field);
       if (typeof value === "boolean") return { current: value, min: null, max: null, asOf: null };
     } catch {
       // skip malformed payload

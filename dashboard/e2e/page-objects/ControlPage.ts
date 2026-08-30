@@ -27,6 +27,38 @@ export class ControlPage {
     await this.page.getByTestId("control-add-button").click();
   }
 
+  async fillLabel(label: string): Promise<void> {
+    await this.page.getByTestId("control-label-input").fill(label);
+  }
+
+  async selectType(type: "sensor-numeric" | "toggle" | "event"): Promise<void> {
+    await this.page.getByTestId("control-type-select").selectOption(type);
+  }
+
+  async fillStatusTarget(target: string): Promise<void> {
+    await this.page.getByTestId("control-target-input").fill(target);
+  }
+
+  telemetryFieldInput() {
+    return this.page.getByTestId("control-field-input");
+  }
+
+  statusFieldInput() {
+    return this.page.getByTestId("control-status-field-input");
+  }
+
+  shapeFieldButton(messageType: string, path: string) {
+    return this.page.getByTestId(`shape-field-button-${messageType}-${path}`);
+  }
+
+  widgetValue() {
+    return this.page.getByTestId("control-widget-value");
+  }
+
+  async clickAdd(): Promise<void> {
+    await this.page.getByTestId("control-add-button").click();
+  }
+
   async save(): Promise<void> {
     await this.page.getByTestId("control-save-button").click();
   }

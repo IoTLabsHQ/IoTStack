@@ -109,7 +109,7 @@ export async function deleteFirmwareVersionsForBoard(token: string, boardId: str
 
 async function publishRealDeviceMessage(
   device: SeedDevice,
-  messageType: "event" | "status",
+  messageType: "event" | "status" | "telemetry",
   payload: unknown,
 ): Promise<void> {
   const client: MqttClient = mqtt.connect(MQTT_URL, {
@@ -141,4 +141,8 @@ export async function publishRealEvent(device: SeedDevice, payload: unknown): Pr
 
 export async function publishRealStatus(device: SeedDevice, payload: unknown): Promise<void> {
   await publishRealDeviceMessage(device, "status", payload);
+}
+
+export async function publishRealTelemetry(device: SeedDevice, payload: unknown): Promise<void> {
+  await publishRealDeviceMessage(device, "telemetry", payload);
 }
