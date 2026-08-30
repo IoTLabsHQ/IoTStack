@@ -8,28 +8,58 @@ chính thiết bị.
 ## Control là gì
 
 Một control là một thứ bạn muốn xem hoặc điều khiển — giá trị nhiệt độ,
-công tắc relay — gắn với một field thật mà thiết bị thực sự phát ra. Mỗi
-control hiển thị qua một **widget**, kiểu hiển thị/tương tác bạn chọn lúc
-thêm control.
+công tắc relay, sự kiện gần nhất — gắn với một field (hoặc loại tin nhắn)
+thật mà thiết bị thực sự phát ra. Mỗi control hiển thị qua một **widget**,
+kiểu hiển thị/tương tác bạn chọn lúc thêm control.
 
-Hiện có 2 loại control:
+Hiện có 3 loại control:
 
 | Loại | Gắn với | Widget |
 |---|---|---|
-| Giá trị cảm biến | field telemetry (vd `temperature_c`) | Label + value, hoặc Min / max / current |
-| Công tắc bật/tắt | target trong status (vd `relay_1`) | Toggle switch |
+| Giá trị cảm biến | field telemetry (vd `temperature_c`, hoặc path lồng nhau như `gps.lat`) | Label + value, hoặc Min / max / current |
+| Công tắc bật/tắt | target + field trong status (vd target `relay_1`, field `state`) | Toggle switch, hoặc Label + value (chỉ xem) |
+| Sự kiện gần nhất | tin nhắn `event` của thiết bị, có thể lọc theo 1 `type` | Latest event |
 
 Switch của control công tắc điều khiển thiết bị trực tiếp — bật/tắt sẽ
-gửi đúng command `set` như form gửi lệnh trên trang thiết bị.
+gửi đúng command `set` như form gửi lệnh trên trang thiết bị, sau đó hiện
+trạng thái loading cho đến khi nhận được phản hồi thật từ thiết bị (xem
+mục "Lệnh công tắc chờ phản hồi thật" bên dưới). Widget Label + value
+trên control công tắc chỉ để xem — dùng để hiển thị nhanh cùng
+target/field đó mà không có switch bấm được.
 
-## Gắn control — gõ tay tên field
+## Gắn control — chọn từ định dạng tin nhắn thật của thiết bị
 
-IoTStack không biết thiết bị của bạn phát field gì; không có cơ chế tự
-phát hiện. Thêm control nghĩa là gõ đúng tên key JSON (cho giá trị cảm
-biến) hoặc target (cho công tắc), phân biệt hoa/thường, khớp đúng với
-những gì firmware thực sự gửi. Gõ sai chính tả thì widget chỉ hiện không
-có dữ liệu — kiểm tra feed "Recent messages" của thiết bị trước để xác
-nhận tên field thật.
+IoTStack không biết trước thiết bị của bạn phát field gì; không có bước
+đăng ký schema. Thay vào đó, khi đang chỉnh control, một panel **Message
+formats** bên phải hiển thị các định dạng tin nhắn thật mà thiết bị đã
+gửi — đã lọc trùng theo cấu trúc (không theo giá trị, nên mười tin nhắn
+telemetry cùng key sẽ gộp thành một định dạng hiển thị), nhóm theo loại
+tin nhắn:
+
+- **Telemetry** — mọi định dạng khác nhau đã thấy, kèm danh sách `Fields:`
+  các field path bấm được.
+- **Status** — nhóm theo `target` trước (target khác nhau có thể mang
+  field khác nhau), rồi theo định dạng trong từng target.
+- **Event** / **Ping** — chỉ hiển thị để tham khảo (không gắn được vào
+  control).
+
+Để gắn 1 control: bấm **+ Add control** (hoặc **Edit** một control đã
+có), chọn **Type**, rồi bấm vào input **Telemetry field** hoặc **Status
+field** của nó — panel sẽ highlight các field khớp thành nút bấm được.
+Bấm 1 field sẽ tự điền vào input. Vẫn có thể gõ tay tên field nếu đã biết
+sẵn hoặc thiết bị chưa gửi tin nhắn khớp.
+
+**Field lồng nhau** dùng ký hiệu dấu chấm: payload như
+`{ "gps": { "lat": 10.7, "long": 106.6 } }` sẽ cho chọn (hoặc gõ tay)
+`gps.lat` và `gps.long` — không chỉ key ở cấp ngoài cùng.
+
+## Sửa binding của control đã có
+
+Chỉnh sửa không chỉ giới hạn ở đổi tên hoặc đổi widget — **Telemetry
+field** của control `sensor-numeric` và **Status target**/**Status
+field** của control `toggle` đều sửa được sau khi tạo, cùng panel gợi ý
+field áp dụng luôn ở đây. Gắn lại control vào field khác mà không cần
+xóa rồi thêm lại.
 
 ## Min/max tính trong tin nhắn gần đây, không phải lịch sử
 
@@ -39,9 +69,28 @@ sử được lưu trữ. Giá trị này sẽ đổi khi tin nhắn cũ trôi r
 đó — đây là ảnh chụp hành vi gần đây, không phải biểu đồ dài hạn như trang
 [Theo dõi tài nguyên](005_resource-monitoring.vi.md).
 
+## Lệnh công tắc chờ phản hồi thật
+
+Bấm switch không chỉ đổi UI ngay theo kiểu lạc quan: nó hiện spinner
+loading ngay lập tức, gửi command `set`, rồi tiếp tục loading cho đến khi
+thiết bị gửi lại một tin nhắn `status` khớp (hoặc tối đa 15 giây trôi qua
+mà không có phản hồi, lúc đó loading tắt mà không giả định là thành
+công). Nghĩa là switch luôn phản ánh đúng những gì thiết bị thực sự báo
+về, không chỉ là lần bấm cuối cùng — hữu ích để phát hiện lệnh không đến
+được thiết bị (mất kết nối, offline).
+
+## Firmware version / cường độ tín hiệu
+
+Nếu firmware của thiết bị báo `firmware_version` và/hoặc `wifi_rssi`
+trong bất kỳ tin nhắn nào (ping hoặc status), thông tin này hiện dưới
+tiêu đề thiết bị ở cả trang Devices và trang Control — vd "Firmware 1.0.0
+· RSSI -76 dBm". Dữ liệu này đọc trực tiếp từ feed tin nhắn, không phải
+bước cấu hình riêng; firmware nào không gửi các field này thì đơn giản
+là dòng đó không hiện.
+
 ## Chỉnh sửa control
 
 Bấm **Edit** trên trang Control của thiết bị để thêm, sắp xếp lại, xóa
-control, hoặc đổi widget của một control (chỉ hiện dropdown khi loại đó có
-nhiều hơn 1 widget phù hợp). Thay đổi được lưu thành một bộ khi bấm
-**Xong** — không lưu từng control riêng lẻ khi đang chỉnh.
+control, hoặc đổi widget/binding của một control. Thay đổi được lưu
+thành một bộ khi bấm **Xong** — không lưu từng control riêng lẻ khi đang
+chỉnh.
