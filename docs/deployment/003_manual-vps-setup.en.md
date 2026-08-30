@@ -50,7 +50,7 @@ non-root admin user with SSH-key-only access and passwordless `sudo`:
 - [VPS admin user setup](vps-admin-user) — full walkthrough,
   including generating a dedicated local SSH key for the server and an
   `~/.ssh/config` alias.
-- [`setup-vps-user.sh`](../setup-vps-user.sh) — the bootstrap script
+- [`setup-vps-user.sh`](/docs-content/setup-vps-user.sh) — the bootstrap script
   referenced by that guide.
 
 ### Deploying

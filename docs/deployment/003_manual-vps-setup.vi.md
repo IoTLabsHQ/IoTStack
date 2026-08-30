@@ -47,7 +47,7 @@ non-root, chỉ dùng SSH key, với `sudo` không cần password:
 
 - [Tạo user quản trị VPS](vps-admin-user) — hướng dẫn đầy đủ,
   gồm cả tạo SSH key riêng cho server và alias trong `~/.ssh/config`.
-- [`setup-vps-user.sh`](../setup-vps-user.sh) — script được hướng dẫn đó
+- [`setup-vps-user.sh`](/docs-content/setup-vps-user.sh) — script được hướng dẫn đó
   tham chiếu tới.
 
 ### Deploy
