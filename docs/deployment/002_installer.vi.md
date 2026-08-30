@@ -56,4 +56,4 @@ IOTSTACK_REINSTALL=fresh IOTSTACK_DOMAIN_CHOICE=keep \
 ## Cách khác: triển khai từ máy tính của bạn
 
 Muốn deploy từ máy tính của bạn qua SSH thay vì chạy lệnh trực tiếp trên
-server? Xem [Cài đặt VPS thủ công](003_manual-vps-setup.vi.md).
+server? Xem [Cài đặt VPS thủ công](manual-vps-setup).

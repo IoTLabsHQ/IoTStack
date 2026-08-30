@@ -8,7 +8,7 @@ a day, a week, a month, and a year.
 
 ## Why this matters
 
-The [server requirements](001_server-requirements.en.md) doc gives you
+The [server requirements](server-requirements) doc gives you
 numbers to plan around before you deploy: 1-2 vCPU, 2 GB RAM, 20-40 GB
 disk. Resource Monitoring is how you confirm those numbers hold up for
 *your* actual usage once real devices are connected, instead of just
@@ -49,4 +49,4 @@ A small agent runs directly on your server (not inside a container) so it
 can see real host-level usage — see
 [Architecture](../reference/001_architecture.en.md#resource-monitoring) if
 you want the technical detail. It's installed automatically by the
-[installer](002_installer.en.md); nothing extra to set up.
+[installer](installer); nothing extra to set up.

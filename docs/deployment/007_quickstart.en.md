@@ -6,7 +6,7 @@ The fastest way to see IoTStack actually working: pick a sample project from the
 
 Secure MQTT (port 8883) only works once your instance has a domain with a certificate — see [Security](../reference/002_security.en.md#transport-security). On the Settings page, set a domain and watch for its own "HTTPS is active for …" line — that's the real readiness signal, not just having typed a domain. Certificate issuance plus Mosquitto's own ~30 second cert-file poll mean "just saved" isn't necessarily "ready this second."
 
-Every code path this feature generates (both the template wizard below and the [per-device Arduino code generator](../reference/001_architecture.en.md)) refuses to produce anything until a domain is configured — there's no plain-MQTT fallback.
+Every code path this feature generates (both the template wizard below and the [per-device Arduino code generator](/docs/reference/architecture)) refuses to produce anything until a domain is configured — there's no plain-MQTT fallback.
 
 ## Pick a project
 

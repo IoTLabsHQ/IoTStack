@@ -67,7 +67,7 @@ Widget Min/max/current tính khoảng giá trị từ các tin nhắn gần đâ
 của thiết bị (cùng feed trang thiết bị hiển thị), không phải rollup lịch
 sử được lưu trữ. Giá trị này sẽ đổi khi tin nhắn cũ trôi ra khỏi cửa sổ
 đó — đây là ảnh chụp hành vi gần đây, không phải biểu đồ dài hạn như trang
-[Theo dõi tài nguyên](005_resource-monitoring.vi.md).
+[Theo dõi tài nguyên](resource-monitoring).
 
 ## Lệnh công tắc chờ phản hồi thật
 

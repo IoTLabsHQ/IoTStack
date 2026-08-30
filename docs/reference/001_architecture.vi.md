@@ -123,7 +123,7 @@ MQTT `collector` riêng, chỉ-subscribe, tách biệt khỏi tài khoản
 6. **Giới hạn dung lượng** — một `UPDATE` SQL atomic duy nhất trên dòng
    `storage_usage` của thiết bị, kiểm tra và tăng trong cùng một câu lệnh
    SQL (`STORAGE_CAP_MB`). Mô hình single-writer của SQLite khiến việc
-   này vốn dĩ không có race condition — xem [Bảo mật](002_security.vi.md)
+   này vốn dĩ không có race condition — xem [Bảo mật](security)
    để hiểu vì sao điều đó quan trọng.
 7. **Lưu trữ** — ghi vào `messages` với `expires_at` tính từ
    `RAW_RETENTION_DAYS` tại thời điểm insert, sau đó cập nhật
@@ -153,7 +153,7 @@ Một file SQLite duy nhất (`better-sqlite3`, chế độ WAL). Năm bảng:
   tên hiển thị, và timestamp. **Không lưu password MQTT hay hash của
   nó** — thứ đó nằm hoàn toàn trong store của plugin Dynamic Security
   Mosquitto, không bao giờ trả lại một khi đã set. Xem
-  [Bảo mật](002_security.vi.md) để hiểu điều này có nghĩa gì với UX
+  [Bảo mật](security) để hiểu điều này có nghĩa gì với UX
   "hiển thị một lần" của credential trên dashboard.
 - `messages` — mỗi dòng là một tin nhắn đã lưu, gồm topic, loại, payload,
   kích thước byte, và hạn TTL.
@@ -163,7 +163,7 @@ Một file SQLite duy nhất (`better-sqlite3`, chế độ WAL). Năm bảng:
 - `settings` — một dòng duy nhất (`id = 1`): domain hiện tại (rỗng theo
   mặc định), và cấu hình SMTP với `smtp_verified_at` — chỉ khác null một
   khi đã test kết nối thật thành công, đó chính là ý nghĩa thực sự của
-  "SMTP đang active" (xem [Bảo mật](002_security.vi.md)).
+  "SMTP đang active" (xem [Bảo mật](security)).
 
 ## Vì sao chọn những thứ này thay vì các lựa chọn phổ biến hơn
 
@@ -186,7 +186,7 @@ chục thiết bị — không phải một nền tảng multi-tenant dùng chun
   trong bộ nhớ của process `api`. Điều này chỉ đúng vì service chạy dạng
   single-instance — nếu dự án này cần scale ngang trong tương lai, giả
   định đó cần được xem lại (xem phần giới hạn trong
-  [Bảo mật](002_security.vi.md)).
+  [Bảo mật](security)).
 - **Plugin Dynamic Security của Mosquitto thay vì HTTP auth callback tự
   viết.** Không thêm network round trip nào mỗi lần kết nối, không cần
   một service riêng phải luôn chạy để thiết bị xác thực được — broker tự
@@ -219,6 +219,6 @@ cả hai qua một unix socket. Chỉ `api` được thêm bind mount cho socket
 `mosquitto` và `caddy` không đụng gì. `api` poll agent, lưu sample vào
 SQLite, và rollup thành dữ liệu theo giờ/ngày để trang Resources trên
 dashboard vẽ được biểu đồ usage theo ngày, tuần, tháng, năm mà không làm
-bảng dữ liệu thô phình vô hạn. Xem [Bảo mật](002_security.vi.md) để hiểu
+bảng dữ liệu thô phình vô hạn. Xem [Bảo mật](security) để hiểu
 vì sao chọn unix socket thay vì network port hay mount `/proc` thẳng vào
 container.

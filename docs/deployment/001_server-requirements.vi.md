@@ -19,7 +19,7 @@ hoặc một nhóm nhỏ.
   bản `docker-compose` v1 độc lập). Cài qua script tiện lợi chính thức
   hoặc repo của distro — xem
   [docs.docker.com/engine/install](https://docs.docker.com/engine/install/).
-  [Trình cài đặt một lệnh](002_installer.vi.md) tự làm việc này giúp bạn.
+  [Trình cài đặt một lệnh](installer) tự làm việc này giúp bạn.
 - **Bản ghi DNS A** trỏ domain về IP server, nếu muốn có HTTPS tự động.
   Không bắt buộc nếu chỉ dùng HTTP thường — bạn có thể thêm domain bất
   cứ lúc nào sau đó từ trang Settings của dashboard.

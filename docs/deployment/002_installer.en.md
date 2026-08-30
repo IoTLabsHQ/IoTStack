@@ -59,4 +59,4 @@ IOTSTACK_REINSTALL=fresh IOTSTACK_DOMAIN_CHOICE=keep \
 
 Prefer to deploy from your own computer over SSH instead of running a
 command on the server itself? See
-[Manual VPS setup](003_manual-vps-setup.en.md).
+[Manual VPS setup](manual-vps-setup).

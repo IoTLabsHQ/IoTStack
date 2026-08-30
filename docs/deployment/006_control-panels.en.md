@@ -68,7 +68,7 @@ The Min/max/current widget computes its range from the device's most
 recent messages (the same feed the device page shows), not a stored
 historical rollup. It resets as older messages age out of that window —
 it's a snapshot of recent behavior, not a long-term chart like the
-[Resource monitoring](005_resource-monitoring.en.md) page's.
+[Resource monitoring](resource-monitoring) page's.
 
 ## Toggle commands wait for the real reply
 

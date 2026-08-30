@@ -1,6 +1,6 @@
 # Manual VPS Setup
 
-The alternative to the [one-command installer](002_installer.en.md):
+The alternative to the [one-command installer](installer):
 deploy from your own machine over SSH, using a checkout of this
 repository.
 
@@ -47,7 +47,7 @@ run them by hand.
 Don't operate the server as `root` day-to-day. Set up a dedicated
 non-root admin user with SSH-key-only access and passwordless `sudo`:
 
-- [VPS admin user setup](004_vps-admin-user.en.md) — full walkthrough,
+- [VPS admin user setup](vps-admin-user) — full walkthrough,
   including generating a dedicated local SSH key for the server and an
   `~/.ssh/config` alias.
 - [`setup-vps-user.sh`](../setup-vps-user.sh) — the bootstrap script
@@ -66,5 +66,5 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-See the main [README](../../README.md) for the full quick-start and
+See the main [README](https://github.com/IoTLabsHQ/IoTStack/blob/main/README.md) for the full quick-start and
 post-deploy steps (creating your first device, connecting firmware).

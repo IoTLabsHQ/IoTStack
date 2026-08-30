@@ -1,6 +1,6 @@
 # Cài Đặt VPS Thủ Công
 
-Cách thay thế cho [trình cài đặt một lệnh](002_installer.vi.md): triển
+Cách thay thế cho [trình cài đặt một lệnh](installer): triển
 khai từ máy tính của bạn qua SSH, dùng bản checkout của repo này.
 
 ## Deploy tự động (khuyến nghị)
@@ -45,7 +45,7 @@ làm tay.
 Đừng vận hành server hằng ngày bằng `root`. Tạo một user quản trị riêng
 non-root, chỉ dùng SSH key, với `sudo` không cần password:
 
-- [Tạo user quản trị VPS](004_vps-admin-user.vi.md) — hướng dẫn đầy đủ,
+- [Tạo user quản trị VPS](vps-admin-user) — hướng dẫn đầy đủ,
   gồm cả tạo SSH key riêng cho server và alias trong `~/.ssh/config`.
 - [`setup-vps-user.sh`](../setup-vps-user.sh) — script được hướng dẫn đó
   tham chiếu tới.
@@ -63,5 +63,5 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Xem [README](../../README.md) chính để biết đầy đủ quick-start và các
+Xem [README](https://github.com/IoTLabsHQ/IoTStack/blob/main/README.md) chính để biết đầy đủ quick-start và các
 bước sau deploy (tạo thiết bị đầu tiên, kết nối firmware).

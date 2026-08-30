@@ -168,7 +168,7 @@ Ghi rõ thay vì giấu đi, theo tinh thần không overclaim:
 - **Không scale ngang.** Rate limiting và login backoff nằm trong bộ nhớ
   của process, chỉ đúng khi `api` chạy dạng single-instance (hình thức
   triển khai duy nhất được hỗ trợ hiện nay — xem
-  [Kiến trúc](001_architecture.vi.md) để hiểu vì sao). Chạy nhiều hơn một
+  [Kiến trúc](architecture) để hiểu vì sao). Chạy nhiều hơn một
   replica `api` sẽ âm thầm nhân rate limit thực tế của mọi thiết bị lên
   theo số replica.
 - **Không có backoff xác thực ở tầng thiết bị.** Vì Mosquitto tự xác thực

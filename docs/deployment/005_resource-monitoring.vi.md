@@ -7,7 +7,7 @@ service của IoTStack — cùng biểu đồ nhìn lại theo ngày, tuần, th
 
 ## Vì sao quan trọng
 
-Tài liệu [yêu cầu server](001_server-requirements.vi.md) đưa ra con số để
+Tài liệu [yêu cầu server](server-requirements) đưa ra con số để
 bạn lên kế hoạch trước khi deploy: 1-2 vCPU, 2 GB RAM, 20-40 GB disk. Theo
 dõi tài nguyên là cách bạn xác nhận những con số đó có đúng với usage thật
 của bạn khi thiết bị thật đã kết nối, thay vì chỉ tin vào lời hứa. Ba
@@ -45,5 +45,5 @@ theo tuần/tháng/năm trôi qua; không cần cấu hình gì thêm.
 Một agent nhỏ chạy trực tiếp trên server của bạn (không nằm trong
 container) để thấy được usage host thật — xem
 [Kiến trúc](../reference/001_architecture.vi.md#theo-dõi-tài-nguyên) nếu
-muốn chi tiết kỹ thuật. Agent được [installer](002_installer.vi.md) tự cài
+muốn chi tiết kỹ thuật. Agent được [installer](installer) tự cài
 đặt sẵn; không cần setup gì thêm.

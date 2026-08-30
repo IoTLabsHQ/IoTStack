@@ -19,7 +19,7 @@ team's device fleet.
   standalone `docker-compose` v1 binary). Install via the official
   convenience script or your distro's Docker repo — see
   [docs.docker.com/engine/install](https://docs.docker.com/engine/install/).
-  The [one-command installer](002_installer.en.md) does this for you
+  The [one-command installer](installer) does this for you
   automatically.
 - **A DNS A record** pointing your domain at the server's IP, if you want
   automatic HTTPS. Not required for a plain HTTP/local setup — you can add

@@ -6,7 +6,7 @@ Cách nhanh nhất để thấy IoTStack chạy thật: chọn một dự án m�
 
 MQTT bảo mật (port 8883) chỉ hoạt động khi instance của bạn đã có domain kèm chứng chỉ — xem [Bảo mật](../reference/002_security.vi.md#bảo-mật-transport). Trên trang Settings, thiết lập domain rồi để ý dòng "HTTPS is active for …" — đó mới là tín hiệu sẵn sàng thật, không chỉ là đã gõ domain. Cấp chứng chỉ cộng với vòng poll ~30 giây của Mosquitto nghĩa là "vừa lưu" chưa chắc "sẵn sàng ngay".
 
-Mọi đường sinh code của tính năng này (cả wizard template bên dưới lẫn [Arduino code generator theo thiết bị](../reference/001_architecture.vi.md)) đều từ chối sinh code nếu chưa có domain — không có chế độ plain MQTT dự phòng.
+Mọi đường sinh code của tính năng này (cả wizard template bên dưới lẫn [Arduino code generator theo thiết bị](/docs/reference/architecture)) đều từ chối sinh code nếu chưa có domain — không có chế độ plain MQTT dự phòng.
 
 ## Chọn dự án
 
