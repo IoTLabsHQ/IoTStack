@@ -36,6 +36,10 @@ const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 const char* MQTT_HOST = "__MQTT_HOST__";
 const uint16_t MQTT_PORT = 8883;
 
+// ---- Firmware version — reported on every status/ping so the dashboard
+// can tell which build a device is running and correlate signal issues. ----
+#define FIRMWARE_VERSION "1.0.0"
+
 // ISRG Root X1 (Let's Encrypt) — every IoTStack MQTTS cert chains to
 // this. Raw string literal so the base64 body doesn't need manual
 // "\n"-per-line escaping.
@@ -143,8 +147,9 @@ void applyLed(bool on) {
   ledState = on;
   bool pinHigh = LED_ACTIVE_LOW ? !on : on;
   digitalWrite(LED_PIN, pinHigh ? HIGH : LOW);
-  char payload[64];
-  snprintf(payload, sizeof(payload), "{\"target\":\"%s\",\"state\":%s}", LED_TARGET_NAME, on ? "true" : "false");
+  char payload[128];
+  snprintf(payload, sizeof(payload), "{\"target\":\"%s\",\"state\":%s,\"firmware_version\":\"%s\",\"wifi_rssi\":%d}",
+           LED_TARGET_NAME, on ? "true" : "false", FIRMWARE_VERSION, WiFi.RSSI());
   mqtt.publish(TOPIC_STATUS, payload);
   Serial.println(payload);
 }
@@ -248,6 +253,8 @@ void loop() {
 
   if (millis() - lastPing >= PING_INTERVAL_MS) {
     lastPing = millis();
-    mqtt.publish(TOPIC_PING, "{}");
+    char pingPayload[96];
+    snprintf(pingPayload, sizeof(pingPayload), "{\"firmware_version\":\"%s\",\"wifi_rssi\":%d}", FIRMWARE_VERSION, WiFi.RSSI());
+    mqtt.publish(TOPIC_PING, pingPayload);
   }
 }
