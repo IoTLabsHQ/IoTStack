@@ -30,14 +30,16 @@ gì phải đọc. Bản thân client ID được ràng buộc với username t�
 tạo, nên chỉ password bị lộ thôi không đủ để attacker kết nối lại dưới
 một client ID khác.
 
-Ba nhiệm vụ phía server nói chuyện với broker cũng là các principal MQTT
+Bốn nhiệm vụ phía server nói chuyện với broker cũng là các principal MQTT
 riêng biệt, phạm vi hẹp, không phải một tài khoản dùng chung:
 `dynsec-admin` (chỉ `$CONTROL/dynamic-security/*`, dùng để cấp/thu hồi
 credential thiết bị), `collector` (chỉ subscribe,
-`devices/+/{telemetry,status,event,ping}`, không bao giờ `cmd`), và
-`api-command` (chỉ publish, `devices/+/cmd`). Một credential trong 3 cái
-này bị lộ cũng không thể dùng để làm 2 việc còn lại, và không cái nào
-đụng được tới `$CONTROL` ngoại trừ `dynsec-admin`.
+`devices/+/{telemetry,status,event,ping}`, không bao giờ `cmd`),
+`api-command` (chỉ publish, `devices/+/cmd`), và `mqtt-stats` (chỉ
+subscribe, cây thống kê `$SYS/broker/#` của chính Mosquitto — dùng cho
+mục MQTT Statistics ở trang Resources). Một credential trong 4 cái này bị
+lộ cũng không thể dùng để làm các việc còn lại, và không cái nào đụng
+được tới `$CONTROL` ngoại trừ `dynsec-admin`.
 
 Credential không bao giờ được lưu dưới dạng plaintext có thể khôi phục
 hay ciphertext có thể đảo ngược ở bất kỳ đâu trong database riêng của dự
@@ -156,8 +158,9 @@ lưu lại cấu hình SMTP luôn yêu cầu nhập lại password.
 
 Service `api` từ chối khởi động khi `NODE_ENV=production` và bất kỳ giá
 trị nào trong `ADMIN_PASSWORD`, `SESSION_SECRET`,
-`DYNSEC_CONTROLLER_PASSWORD`, `MQTT_COLLECTOR_PASSWORD`, hoặc
-`MQTT_API_COMMAND_PASSWORD` vẫn còn khớp giá trị placeholder trong
+`DYNSEC_CONTROLLER_PASSWORD`, `MQTT_COLLECTOR_PASSWORD`,
+`MQTT_API_COMMAND_PASSWORD`, hoặc `MQTT_STATS_PASSWORD` vẫn còn khớp
+giá trị placeholder trong
 `.env.example` — bắt lỗi "quên đổi secret mặc định trước khi deploy"
 ngay lúc khởi động thay vì âm thầm chạy với một password ai cũng biết.
 

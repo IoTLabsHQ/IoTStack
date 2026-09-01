@@ -29,14 +29,15 @@ client ID itself is bound to the username at creation time, so a leaked
 password alone doesn't let an attacker reconnect under a different client
 ID.
 
-The three server-side jobs that talk to the broker are also separate,
+The four server-side jobs that talk to the broker are also separate,
 narrowly-scoped MQTT principals, not one shared account: `dynsec-admin`
 (only `$CONTROL/dynamic-security/*`, used to provision/revoke device
 credentials), `collector` (subscribe-only, `devices/+/{telemetry,status,event,ping}`,
-never `cmd`), and `api-command` (publish-only, `devices/+/cmd`). A
-compromised credential for any one of these can't be used to do either of
-the other two jobs, and none of them can touch `$CONTROL` except
-`dynsec-admin`.
+never `cmd`), `api-command` (publish-only, `devices/+/cmd`), and
+`mqtt-stats` (subscribe-only, Mosquitto's own `$SYS/broker/#` stats tree —
+the Resources page's MQTT Statistics section). A compromised credential
+for any one of these can't be used to do any of the others' jobs, and
+none of them can touch `$CONTROL` except `dynsec-admin`.
 
 Credentials are never stored as recoverable plaintext or reversible
 ciphertext anywhere in this project's own database. The `devices` table
@@ -154,7 +155,8 @@ requires re-entering the password.
 
 The `api` service refuses to start when `NODE_ENV=production` and any of
 `ADMIN_PASSWORD`, `SESSION_SECRET`, `DYNSEC_CONTROLLER_PASSWORD`,
-`MQTT_COLLECTOR_PASSWORD`, or `MQTT_API_COMMAND_PASSWORD` still match the
+`MQTT_COLLECTOR_PASSWORD`, `MQTT_API_COMMAND_PASSWORD`, or
+`MQTT_STATS_PASSWORD` still match the
 placeholder value shipped in `.env.example` — catching "forgot to change
 the default secret before deploying" at boot instead of silently running
 with a known password.
