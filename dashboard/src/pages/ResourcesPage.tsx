@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { Shell } from "../components/Shell";
 import { GranularityToggle, formatBucketTime, CHART_COLOR, CHART_FILL_LIGHT } from "../components/GranularityToggle";
+import { getMqttStats, getRecentMessages } from "../lib/api/stats";
+import { formatRelativeTimeVi, formatExactTimeVi } from "../lib/relativeTime";
 import { ApiError } from "../lib/api/client";
 import {
   getLiveResources,
@@ -69,6 +71,82 @@ function Gauge({
         />
       </div>
     </div>
+  );
+}
+
+function MqttStatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function MqttStatsSection() {
+  const statsQuery = useQuery({
+    queryKey: ["mqtt-stats"],
+    queryFn: getMqttStats,
+    refetchInterval: 5_000,
+  });
+  const messagesQuery = useQuery({
+    queryKey: ["mqtt-recent-messages"],
+    queryFn: () => getRecentMessages(30),
+    refetchInterval: 4_000,
+  });
+
+  const stats = statsQuery.data;
+  const fmt = (n: number | null | undefined) => (n === null || n === undefined ? "—" : n.toLocaleString());
+
+  return (
+    <section className="mb-6">
+      <h2 className="mb-1 text-base font-semibold text-slate-900">MQTT Statistics</h2>
+      <p className="mb-4 text-sm text-slate-500">
+        Real counters read from Mosquitto's own broker stats ($SYS/broker) — updates every ~10s.
+      </p>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MqttStatCard label="Messages received" value={fmt(stats?.messagesReceived)} />
+        <MqttStatCard label="Messages sent" value={fmt(stats?.messagesSent)} />
+        <MqttStatCard label="Connected clients" value={fmt(stats?.clientsConnected)} />
+        <MqttStatCard
+          label="Load (1min, recv/sent)"
+          value={
+            stats?.loadReceived1Min != null && stats?.loadSent1Min != null
+              ? `${stats.loadReceived1Min.toFixed(1)} / ${stats.loadSent1Min.toFixed(1)} msg/s`
+              : "—"
+          }
+        />
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-5">
+        <h3 className="mb-3 text-sm font-semibold text-slate-900">Realtime message feed</h3>
+        <div className="h-64 overflow-y-auto" data-testid="mqtt-recent-messages">
+          {messagesQuery.data && messagesQuery.data.messages.length > 0 ? (
+            <ul className="divide-y divide-slate-100 text-sm">
+              {messagesQuery.data.messages.map((m) => {
+                const relative = formatRelativeTimeVi(m.received_at);
+                return (
+                  <li key={m.id} className="flex items-center gap-3 py-2">
+                    <span
+                      className="shrink-0 text-xs text-slate-400"
+                      title={formatExactTimeVi(m.received_at)}
+                    >
+                      {relative.text}
+                    </span>
+                    <span className="shrink-0 font-medium text-slate-900">{m.device_name}</span>
+                    <span className="truncate font-mono text-xs text-slate-500">{m.topic}</span>
+                    <span className="ml-auto shrink-0 text-xs text-slate-400">{m.payload_bytes} B</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-500">No messages yet.</p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -338,6 +416,8 @@ export function ResourcesPage() {
           </div>
         )}
       </section>
+
+      <MqttStatsSection />
     </Shell>
   );
 }
