@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Shell } from "../components/Shell";
 import {
   deleteDevice,
@@ -10,9 +11,11 @@ import {
   regenerateDevice,
   sendCommand,
 } from "../lib/api/devices";
+import { getTrafficHistory } from "../lib/api/traffic";
 import { CredentialActions } from "../components/CredentialActions";
 import { ArduinoCodeSection } from "../components/ArduinoCodeSection";
 import { DeviceInfoLine } from "../components/DeviceInfoLine";
+import { GranularityToggle, formatBucketTime, type Granularity } from "../components/GranularityToggle";
 
 const COMMANDS = ["ping", "set", "status.request", "config.update", "restart"] as const;
 
@@ -151,6 +154,8 @@ export function DeviceDetailPage() {
         </dl>
       </div>
 
+      <DeviceTrafficChart deviceId={device.id} />
+
       <ArduinoCodeSection
         deviceId={device.id}
         credential={{
@@ -244,6 +249,47 @@ export function DeviceDetailPage() {
       </div>
 
     </Shell>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function DeviceTrafficChart({ deviceId }: { deviceId: number }) {
+  const [granularity, setGranularity] = useState<Granularity>("day");
+  const { data, isLoading } = useQuery({
+    queryKey: ["traffic-history", deviceId, granularity],
+    queryFn: () => getTrafficHistory(deviceId, granularity),
+  });
+
+  const points = (data?.points ?? []).map((p) => ({
+    time: formatBucketTime(p.bucket, granularity),
+    bytes: p.total_bytes,
+  }));
+
+  return (
+    <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5">
+      <h2 className="mb-3 text-sm font-semibold text-slate-900">Data usage</h2>
+      <GranularityToggle value={granularity} onChange={setGranularity} />
+      {isLoading ? (
+        <p className="text-sm text-slate-500">Loading…</p>
+      ) : points.length === 0 ? (
+        <p className="text-sm text-slate-500">No data yet for this range.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={points}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
+            <YAxis fontSize={11} stroke="#94a3b8" tickFormatter={(v) => formatBytes(Number(v))} />
+            <Tooltip formatter={(v) => formatBytes(Number(v))} />
+            <Bar dataKey="bytes" fill="#0f172a" />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
   );
 }
 
