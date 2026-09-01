@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { Shell } from "../components/Shell";
+import { GranularityToggle } from "../components/GranularityToggle";
 import { ApiError } from "../lib/api/client";
 import {
   getLiveResources,
@@ -70,13 +71,6 @@ function Gauge({
     </div>
   );
 }
-
-const GRANULARITIES: { key: ResourceGranularity; label: string }[] = [
-  { key: "day", label: "Day" },
-  { key: "week", label: "Week" },
-  { key: "month", label: "Month" },
-  { key: "year", label: "Year" },
-];
 
 function shortTime(bucket: string, granularity: ResourceGranularity): string {
   if (granularity === "day") {
@@ -289,21 +283,7 @@ export function ResourcesPage() {
       )}
 
       <div className="mb-6">
-        <div className="mb-3 flex gap-1 rounded-md border border-slate-300 p-0.5 text-sm w-fit">
-          {GRANULARITIES.map((g) => (
-            <button
-              key={g.key}
-              onClick={() => setGranularity(g.key)}
-              className={`rounded px-3 py-1 font-medium ${
-                granularity === g.key
-                  ? "bg-primary-800 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
+        <GranularityToggle value={granularity} onChange={setGranularity} />
         <ResourceCharts granularity={granularity} />
       </div>
 
