@@ -1,8 +1,13 @@
-import type { Control, ToggleControl } from "../../lib/api/control";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import type { Control, SensorNumericControl, ToggleControl } from "../../lib/api/control";
 import type { Message } from "../../lib/api/devices";
 import { extractCurrentValue } from "../../lib/control-values";
 import { formatRelativeTimeVi, formatExactTimeVi } from "../../lib/relativeTime";
 import { useControlCommand } from "../../hooks/useControlCommand";
+import { GranularityToggle, formatBucketTime, type Granularity } from "../GranularityToggle";
+import { getTelemetryHistory } from "../../lib/api/telemetry";
 
 export function ControlWidget({
   deviceId,
@@ -55,6 +60,10 @@ export function ControlWidget({
         )}
       </div>
     );
+  }
+
+  if (control.widget === "history-chart") {
+    return <TelemetryChartWidget deviceId={deviceId} control={control} />;
   }
 
   if (control.widget === "min-max-current") {
@@ -134,6 +143,47 @@ function ToggleSwitchWidget({
           )}
         </button>
       </div>
+    </div>
+  );
+}
+
+function TelemetryChartWidget({
+  deviceId,
+  control,
+}: {
+  deviceId: number;
+  control: SensorNumericControl;
+}) {
+  const [granularity, setGranularity] = useState<Granularity>("day");
+  const { data, isLoading } = useQuery({
+    queryKey: ["telemetry-history", deviceId, control.binding.field, granularity],
+    queryFn: () => getTelemetryHistory(deviceId, control.binding.field, granularity),
+  });
+
+  const points = (data?.points ?? []).map((p) => ({
+    time: formatBucketTime(p.bucket, granularity),
+    value: p.value ?? p.avg_value ?? 0,
+  }));
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5" data-testid="control-widget-history-chart">
+      <p className="mb-2 text-sm text-slate-500">{control.label}</p>
+      <GranularityToggle value={granularity} onChange={setGranularity} />
+      {isLoading ? (
+        <p className="text-sm text-slate-500">Loading…</p>
+      ) : points.length === 0 ? (
+        <p className="text-sm text-slate-500">No data yet for this range.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={180}>
+          <LineChart data={points}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
+            <YAxis fontSize={11} stroke="#94a3b8" />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke="#0f172a" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

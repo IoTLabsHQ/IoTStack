@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { Shell } from "../components/Shell";
-import { GranularityToggle } from "../components/GranularityToggle";
+import { GranularityToggle, formatBucketTime } from "../components/GranularityToggle";
 import { ApiError } from "../lib/api/client";
 import {
   getLiveResources,
@@ -72,17 +72,6 @@ function Gauge({
   );
 }
 
-function shortTime(bucket: string, granularity: ResourceGranularity): string {
-  if (granularity === "day") {
-    return new Date(bucket + "Z").toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-  if (granularity === "year") {
-    return bucket.slice(5); // MM-DD
-  }
-  // hourly buckets look like "2026-08-27T10"
-  return bucket.slice(5).replace("T", " ") + ":00";
-}
-
 function ResourceCharts({ granularity }: { granularity: ResourceGranularity }) {
   const { data, isLoading } = useQuery({
     queryKey: ["resource-history", granularity],
@@ -96,7 +85,7 @@ function ResourceCharts({ granularity }: { granularity: ResourceGranularity }) {
   const hostPoints = data.points
     .filter((p) => p.target === "host")
     .map((p) => ({
-      time: shortTime(p.bucket, granularity),
+      time: formatBucketTime(p.bucket, granularity),
       cpuPct: p.cpu_pct ?? p.avg_cpu_pct ?? 0,
       memPct: pct(p.used_bytes ?? p.avg_used_bytes ?? 0, p.total_bytes ?? 1),
     }));
@@ -106,7 +95,7 @@ function ResourceCharts({ granularity }: { granularity: ResourceGranularity }) {
     ? data.points
         .filter((p) => p.target === diskTarget)
         .map((p) => ({
-          time: shortTime(p.bucket, granularity),
+          time: formatBucketTime(p.bucket, granularity),
           diskPct: pct(p.used_bytes ?? p.avg_used_bytes ?? 0, p.total_bytes ?? 1),
         }))
     : [];

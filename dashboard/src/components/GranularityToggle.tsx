@@ -1,5 +1,18 @@
 export type Granularity = "day" | "week" | "month" | "year";
 
+/** Formats a history-point bucket string for a chart's x-axis, matching
+ * ResourcesPage.tsx's original shortTime convention. */
+export function formatBucketTime(bucket: string, granularity: Granularity): string {
+  if (granularity === "day") {
+    return new Date(bucket + "Z").toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  if (granularity === "year") {
+    return bucket.slice(5); // MM-DD
+  }
+  // hourly buckets look like "2026-08-27T10"
+  return bucket.slice(5).replace("T", " ") + ":00";
+}
+
 const GRANULARITIES: { key: Granularity; label: string }[] = [
   { key: "day", label: "Day" },
   { key: "week", label: "Week" },

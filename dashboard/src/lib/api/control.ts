@@ -1,7 +1,7 @@
 import { apiFetch } from "./client";
 
 export type ControlType = "sensor-numeric" | "toggle" | "event";
-export type WidgetType = "label-value" | "min-max-current" | "toggle-switch" | "latest-event";
+export type WidgetType = "label-value" | "min-max-current" | "toggle-switch" | "latest-event" | "history-chart";
 
 interface BaseControl {
   id: string;
@@ -35,6 +35,7 @@ export const WIDGET_LABELS: Record<WidgetType, string> = {
   "min-max-current": "Min / max / current",
   "toggle-switch": "Toggle switch",
   "latest-event": "Latest event",
+  "history-chart": "History chart",
 };
 
 /** Non-binding default for pre-filling the add-control form; server re-validates on save. */

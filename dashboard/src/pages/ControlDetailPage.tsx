@@ -30,7 +30,7 @@ function blankControl(type: ControlType): Control {
       label: "",
       type,
       widget,
-      matchingWidgets: ["label-value", "min-max-current"],
+      matchingWidgets: ["label-value", "min-max-current", "history-chart"],
       binding: { source: "telemetry", field: "" },
     };
   }

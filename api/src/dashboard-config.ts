@@ -11,7 +11,7 @@ import { randomUUID } from "crypto";
 import { ValidationError, requireString, optionalString } from "./validation";
 
 export type ControlType = "sensor-numeric" | "toggle" | "event";
-export type WidgetType = "label-value" | "min-max-current" | "toggle-switch" | "latest-event";
+export type WidgetType = "label-value" | "min-max-current" | "toggle-switch" | "latest-event" | "history-chart";
 
 export interface BaseControl {
   id: string;
@@ -41,7 +41,7 @@ export interface DashboardConfig {
 }
 
 export const CONTROL_TYPE_WIDGETS: Record<ControlType, WidgetType[]> = {
-  "sensor-numeric": ["label-value", "min-max-current"],
+  "sensor-numeric": ["label-value", "min-max-current", "history-chart"],
   toggle: ["toggle-switch", "label-value"],
   event: ["latest-event"],
 };
