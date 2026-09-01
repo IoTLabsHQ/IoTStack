@@ -27,6 +27,17 @@ export class ControlPage {
     await this.page.getByTestId("control-add-button").click();
   }
 
+  async addSensorNumericControl(label: string, field: string): Promise<void> {
+    await this.page.getByTestId("control-label-input").fill(label);
+    await this.page.getByTestId("control-type-select").selectOption("sensor-numeric");
+    await this.page.getByTestId("control-field-input").fill(field);
+    await this.page.getByTestId("control-add-button").click();
+  }
+
+  async selectWidget(index: number, widget: string): Promise<void> {
+    await this.page.getByTestId(`control-widget-select-${index}`).selectOption(widget);
+  }
+
   async fillLabel(label: string): Promise<void> {
     await this.page.getByTestId("control-label-input").fill(label);
   }
@@ -81,5 +92,9 @@ export class ControlPage {
 
   deviceInfoLine() {
     return this.page.getByTestId("device-info-line");
+  }
+
+  historyChart() {
+    return this.page.getByTestId("control-widget-history-chart");
   }
 }

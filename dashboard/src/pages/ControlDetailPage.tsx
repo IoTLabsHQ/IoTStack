@@ -251,6 +251,7 @@ export function ControlDetailPage() {
                     <p className="mt-1 text-xs text-slate-400">{CONTROL_TYPE_LABELS[control.type]}</p>
                     {control.matchingWidgets.length > 1 ? (
                       <select
+                        data-testid={`control-widget-select-${index}`}
                         value={control.widget}
                         onChange={(e) => setWidget(index, e.target.value as WidgetType)}
                         className="mt-3 w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
