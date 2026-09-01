@@ -5,6 +5,7 @@ import { logger } from "./logger";
 import { runMigrations, seedAdmin, seedSettings, seedResourceThresholds, getSettingsRow } from "./db";
 import { connectDynsec } from "./dynsec-client";
 import { connectCommandClient } from "./command-client";
+import { connectMqttStats } from "./mqtt-stats";
 import { startCollector, startRetentionSweep, getCollectorStatus } from "./collector";
 import { startResourceCollector, startResourceRollupSweep } from "./resource-collector";
 import { startTelemetryRollupSweep } from "./telemetry-rollup";
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   seedResourceThresholds();
   await connectDynsec();
   await connectCommandClient();
+  await connectMqttStats();
   startCollector();
   startRetentionSweep();
   startResourceCollector();
