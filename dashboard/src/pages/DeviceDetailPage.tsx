@@ -285,7 +285,7 @@ function DeviceTrafficChart({ deviceId }: { deviceId: number }) {
             <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
             <YAxis fontSize={11} stroke="#94a3b8" tickFormatter={(v) => formatBytes(Number(v))} />
             <Tooltip formatter={(v) => formatBytes(Number(v))} />
-            <Bar dataKey="bytes" fill="#0f172a" />
+            <Bar dataKey="bytes" fill="#0f172a" maxBarSize={60} />
           </BarChart>
         </ResponsiveContainer>
       )}
