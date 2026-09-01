@@ -16,7 +16,7 @@ Hiện có 3 loại control:
 
 | Loại | Gắn với | Widget |
 |---|---|---|
-| Giá trị cảm biến | field telemetry (vd `temperature_c`, hoặc path lồng nhau như `gps.lat`) | Label + value, hoặc Min / max / current |
+| Giá trị cảm biến | field telemetry (vd `temperature_c`, hoặc path lồng nhau như `gps.lat`) | Label + value, Min / max / current, hoặc History chart |
 | Công tắc bật/tắt | target + field trong status (vd target `relay_1`, field `state`) | Toggle switch, hoặc Label + value (chỉ xem) |
 | Sự kiện gần nhất | tin nhắn `event` của thiết bị, có thể lọc theo 1 `type` | Latest event |
 
@@ -66,8 +66,30 @@ xóa rồi thêm lại.
 Widget Min/max/current tính khoảng giá trị từ các tin nhắn gần đây nhất
 của thiết bị (cùng feed trang thiết bị hiển thị), không phải rollup lịch
 sử được lưu trữ. Giá trị này sẽ đổi khi tin nhắn cũ trôi ra khỏi cửa sổ
-đó — đây là ảnh chụp hành vi gần đây, không phải biểu đồ dài hạn như trang
-[Theo dõi tài nguyên](resource-monitoring).
+đó — đây là ảnh chụp hành vi gần đây. Muốn xem dài hạn thật sự, dùng
+widget History chart bên dưới.
+
+## History chart — xu hướng thật theo thời gian
+
+Widget History chart vẽ giá trị cảm biến theo thời gian, chuyển đổi
+giữa **Day / Week / Month / Year** — cùng bộ chọn khoảng thời gian như
+trang [Theo dõi tài nguyên](resource-monitoring). Day đọc trực tiếp tin
+nhắn gần đây của thiết bị; Week/Month/Year đọc từ rollup hourly/daily
+được tính mỗi giờ 1 lần, nên control mới thêm sẽ cần vài giờ để các mốc
+xa hơn có đủ dữ liệu, thay vì hiện ngay lập tức (Day không bị ảnh hưởng
+— đó là dữ liệu trực tiếp). Giống hệt cách trang Theo dõi tài nguyên
+"chỉ có 1 ngày dữ liệu lúc mới cài, rồi tự đầy dần".
+
+## Dung lượng dữ liệu thiết bị
+
+Tách biệt với control, trang riêng của mỗi thiết bị (không phải trang
+Control) có biểu đồ **Data usage** — số byte và số tin nhắn gửi theo
+từng khoảng, cùng bộ chọn Day/Week/Month/Year, nằm cạnh dòng "Storage
+used" (tổng dung lượng hiện có). Storage used không bao giờ reset (nó
+kiểm soát cap dung lượng của thiết bị); biểu đồ Data usage dùng để phát
+hiện xu hướng bất thường — thiết bị đột nhiên gửi nhiều hơn hẳn bình
+thường thường là dấu hiệu đầu tiên của lỗi firmware hoặc vòng lặp cảm
+biến bị hỏng.
 
 ## Lệnh công tắc chờ phản hồi thật
 

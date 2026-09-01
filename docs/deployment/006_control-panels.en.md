@@ -16,7 +16,7 @@ There are three control types:
 
 | Type | Binds to | Widgets |
 |---|---|---|
-| Sensor value | a telemetry field (e.g. `temperature_c`, or a nested path like `gps.lat`) | Label + value, or Min / max / current |
+| Sensor value | a telemetry field (e.g. `temperature_c`, or a nested path like `gps.lat`) | Label + value, Min / max / current, or History chart |
 | Toggle | a status target + field (e.g. target `relay_1`, field `state`) | Toggle switch, or Label + value (read-only) |
 | Latest event | the device's `event` messages, optionally filtered to one `type` | Latest event |
 
@@ -67,8 +67,30 @@ without deleting and re-adding it.
 The Min/max/current widget computes its range from the device's most
 recent messages (the same feed the device page shows), not a stored
 historical rollup. It resets as older messages age out of that window —
-it's a snapshot of recent behavior, not a long-term chart like the
-[Resource monitoring](resource-monitoring) page's.
+it's a snapshot of recent behavior. For an actual long-term view, use
+the History chart widget instead (below).
+
+## History charts — real trends over time
+
+The History chart widget plots a sensor value over time, switchable
+between **Day / Week / Month / Year** — same granularity picker as the
+[Resource monitoring](resource-monitoring) page. Day reads the device's
+raw recent messages directly; Week/Month/Year read from an hourly/daily
+rollup that's computed once an hour, so a brand-new control's longer
+ranges fill in gradually over the following hour rather than showing
+data immediately (Day is unaffected — it's live). This mirrors Resource
+monitoring's own "a new install only has a day of data at first"
+behavior.
+
+## Device data usage
+
+Separately from controls, each device's own page (not the Control page)
+has a **Data usage** chart — bytes and message count sent per period,
+with the same Day/Week/Month/Year toggle, next to the existing
+"Storage used" running total. Storage used never resets (it gates the
+device's storage cap); the Data usage chart is for spotting usage
+trends — a device suddenly sending far more than usual is often the
+first sign of a firmware bug or a misbehaving sensor loop.
 
 ## Toggle commands wait for the real reply
 
