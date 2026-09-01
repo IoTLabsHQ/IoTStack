@@ -1,5 +1,12 @@
 export type Granularity = "day" | "week" | "month" | "year";
 
+/** Brand primary-800 (`dashboard/src/index.css`) — the one chart stroke/fill
+ * color, shared so every chart in the app matches instead of each picking
+ * its own gray/black. */
+export const CHART_COLOR = "#0e8578";
+/** Brand primary-200 — light fill for Area charts, paired with CHART_COLOR. */
+export const CHART_FILL_LIGHT = "#bbede7";
+
 /**
  * Formats a history-point bucket string for a chart's x-axis. Goes off the
  * bucket's own shape rather than trusting `granularity` alone — "day" means

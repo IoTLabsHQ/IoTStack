@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { Shell } from "../components/Shell";
-import { GranularityToggle, formatBucketTime } from "../components/GranularityToggle";
+import { GranularityToggle, formatBucketTime, CHART_COLOR, CHART_FILL_LIGHT } from "../components/GranularityToggle";
 import { ApiError } from "../lib/api/client";
 import {
   getLiveResources,
@@ -113,7 +113,7 @@ function ResourceCharts({ granularity }: { granularity: ResourceGranularity }) {
               <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
               <YAxis fontSize={11} stroke="#94a3b8" domain={[0, 100]} unit="%" />
               <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} />
-              <Line type="monotone" dataKey="cpuPct" stroke="#0f172a" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="cpuPct" stroke={CHART_COLOR} strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -130,7 +130,7 @@ function ResourceCharts({ granularity }: { granularity: ResourceGranularity }) {
               <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
               <YAxis fontSize={11} stroke="#94a3b8" domain={[0, 100]} unit="%" />
               <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} />
-              <Area type="monotone" dataKey="memPct" stroke="#0f172a" fill="#cbd5e1" strokeWidth={2} />
+              <Area type="monotone" dataKey="memPct" stroke={CHART_COLOR} fill={CHART_FILL_LIGHT} strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -149,7 +149,7 @@ function ResourceCharts({ granularity }: { granularity: ResourceGranularity }) {
               <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
               <YAxis fontSize={11} stroke="#94a3b8" domain={[0, 100]} unit="%" />
               <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} />
-              <Area type="monotone" dataKey="diskPct" stroke="#0f172a" fill="#cbd5e1" strokeWidth={2} />
+              <Area type="monotone" dataKey="diskPct" stroke={CHART_COLOR} fill={CHART_FILL_LIGHT} strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         )}

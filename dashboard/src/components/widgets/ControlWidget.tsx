@@ -6,7 +6,7 @@ import type { Message } from "../../lib/api/devices";
 import { extractCurrentValue } from "../../lib/control-values";
 import { formatRelativeTimeVi, formatExactTimeVi } from "../../lib/relativeTime";
 import { useControlCommand } from "../../hooks/useControlCommand";
-import { GranularityToggle, formatBucketTime, type Granularity } from "../GranularityToggle";
+import { GranularityToggle, formatBucketTime, CHART_COLOR, type Granularity } from "../GranularityToggle";
 import { getTelemetryHistory } from "../../lib/api/telemetry";
 
 export function ControlWidget({
@@ -180,7 +180,7 @@ function TelemetryChartWidget({
             <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
             <YAxis fontSize={11} stroke="#94a3b8" />
             <Tooltip />
-            <Line type="monotone" dataKey="value" stroke="#0f172a" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="value" stroke={CHART_COLOR} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       )}

@@ -15,7 +15,7 @@ import { getTrafficHistory } from "../lib/api/traffic";
 import { CredentialActions } from "../components/CredentialActions";
 import { ArduinoCodeSection } from "../components/ArduinoCodeSection";
 import { DeviceInfoLine } from "../components/DeviceInfoLine";
-import { GranularityToggle, formatBucketTime, type Granularity } from "../components/GranularityToggle";
+import { GranularityToggle, formatBucketTime, CHART_COLOR, type Granularity } from "../components/GranularityToggle";
 
 const COMMANDS = ["ping", "set", "status.request", "config.update", "restart"] as const;
 
@@ -285,7 +285,7 @@ function DeviceTrafficChart({ deviceId }: { deviceId: number }) {
             <XAxis dataKey="time" fontSize={11} stroke="#94a3b8" />
             <YAxis fontSize={11} stroke="#94a3b8" tickFormatter={(v) => formatBytes(Number(v))} />
             <Tooltip formatter={(v) => formatBytes(Number(v))} />
-            <Bar dataKey="bytes" fill="#0f172a" maxBarSize={60} />
+            <Bar dataKey="bytes" fill={CHART_COLOR} maxBarSize={60} />
           </BarChart>
         </ResponsiveContainer>
       )}
