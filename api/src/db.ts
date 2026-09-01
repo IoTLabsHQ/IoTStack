@@ -137,6 +137,49 @@ CREATE INDEX IF NOT EXISTS idx_ota_job_targets_job ON ota_job_targets(ota_job_id
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ota_job_targets_request_id ON ota_job_targets(request_id);
 CREATE INDEX IF NOT EXISTS idx_ota_job_targets_device ON ota_job_targets(device_id);
 
+-- field: dot-path, same convention as a Control's binding.field (e.g.
+-- "temperature_c" or "gps.lat") — only numeric telemetry leaves are rolled
+-- up here, never raw payloads (see json-flatten.ts).
+CREATE TABLE IF NOT EXISTS telemetry_samples_hourly (
+  device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  field TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  avg_value REAL NOT NULL,
+  min_value REAL NOT NULL,
+  max_value REAL NOT NULL,
+  PRIMARY KEY (device_id, field, bucket)
+);
+
+CREATE TABLE IF NOT EXISTS telemetry_samples_daily (
+  device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  field TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  avg_value REAL NOT NULL,
+  min_value REAL NOT NULL,
+  max_value REAL NOT NULL,
+  PRIMARY KEY (device_id, field, bucket)
+);
+
+-- message_count/total_bytes per device per bucket — a rolled-up view of
+-- MQTT traffic volume, separate from storage_usage's never-resetting
+-- running total (that one gates the storage cap; this one is for charting
+-- usage trends over time).
+CREATE TABLE IF NOT EXISTS device_traffic_hourly (
+  device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  bucket TEXT NOT NULL,
+  message_count INTEGER NOT NULL,
+  total_bytes INTEGER NOT NULL,
+  PRIMARY KEY (device_id, bucket)
+);
+
+CREATE TABLE IF NOT EXISTS device_traffic_daily (
+  device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  bucket TEXT NOT NULL,
+  message_count INTEGER NOT NULL,
+  total_bytes INTEGER NOT NULL,
+  PRIMARY KEY (device_id, bucket)
+);
+
 CREATE TABLE IF NOT EXISTS resource_thresholds (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   host_ram_warn_pct INTEGER NOT NULL DEFAULT 70,
