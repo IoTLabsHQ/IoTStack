@@ -25,3 +25,12 @@ export function flattenNumericLeaves(value: unknown, prefix = ""): NumericLeaf[]
   }
   return [];
 }
+
+/** Dot-path lookup, safe against non-object intermediates — same
+ * convention as dashboard/src/lib/message-shapes.ts's getByPath. */
+export function getByPath(payload: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>((acc, key) => {
+    if (typeof acc !== "object" || acc === null) return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, payload);
+}

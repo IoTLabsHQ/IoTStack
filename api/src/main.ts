@@ -7,12 +7,15 @@ import { connectDynsec } from "./dynsec-client";
 import { connectCommandClient } from "./command-client";
 import { startCollector, startRetentionSweep, getCollectorStatus } from "./collector";
 import { startResourceCollector, startResourceRollupSweep } from "./resource-collector";
+import { startTelemetryRollupSweep } from "./telemetry-rollup";
 import { assertNoDefaultSecretsInProduction } from "./startup-guard";
 import { authRouter } from "./auth.routes";
 import { devicesRouter } from "./devices.routes";
 import { statsRouter } from "./stats.routes";
 import { settingsRouter } from "./settings.routes";
 import { resourcesRouter } from "./resources.routes";
+import { telemetryRouter } from "./telemetry.routes";
+import { trafficRouter } from "./traffic.routes";
 import { firmwareRouter } from "./firmware.routes";
 import { otaRouter } from "./ota.routes";
 import { startOtaTimeoutSweep } from "./ota-timeout-sweep";
@@ -31,6 +34,7 @@ async function main(): Promise<void> {
   startRetentionSweep();
   startResourceCollector();
   startResourceRollupSweep();
+  startTelemetryRollupSweep();
   startOtaTimeoutSweep();
 
   // Self-heal: re-sync the shared domain file and Caddy's live config from
@@ -52,6 +56,8 @@ async function main(): Promise<void> {
   app.use("/stats", statsRouter);
   app.use("/settings", settingsRouter);
   app.use("/resources", resourcesRouter);
+  app.use("/devices", telemetryRouter);
+  app.use("/devices", trafficRouter);
   app.use("/firmware", firmwareRouter);
   app.use("/ota", otaRouter);
 
