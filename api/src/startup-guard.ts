@@ -17,6 +17,7 @@ const CHECKED_SECRETS: Array<{ name: string; value: string }> = [
   { name: "DYNSEC_CONTROLLER_PASSWORD", value: config.dynsec.controllerPassword },
   { name: "MQTT_COLLECTOR_PASSWORD", value: config.mqttCollector.password },
   { name: "MQTT_API_COMMAND_PASSWORD", value: config.mqttApiCommand.password },
+  { name: "MQTT_STATS_PASSWORD", value: config.mqttStats.password },
   { name: "OTA_DOWNLOAD_SECRET", value: config.ota.downloadSecret },
 ];
 

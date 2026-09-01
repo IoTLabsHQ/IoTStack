@@ -141,9 +141,23 @@ setup_api_command_principal() {
 	$CTRL dynsec addClientRole "$MQTT_API_COMMAND_USERNAME" role-api-command
 }
 
+# Read-only on Mosquitto's own $SYS broker-stats tree (message counts,
+# connected clients, load averages) — the Resources page's MQTT Statistics
+# section. Least privilege: subscribe only, nothing else — can't publish,
+# can't touch device topics or $CONTROL.
+setup_mqtt_stats_principal() {
+	role_exists role-mqtt-stats && return 0
+	echo "creating role-mqtt-stats / $MQTT_STATS_USERNAME..."
+	$CTRL dynsec createRole role-mqtt-stats
+	$CTRL dynsec addRoleACL role-mqtt-stats subscribePattern '$SYS/broker/#' allow
+	$CTRL dynsec createClient "$MQTT_STATS_USERNAME" -p "$MQTT_STATS_PASSWORD"
+	$CTRL dynsec addClientRole "$MQTT_STATS_USERNAME" role-mqtt-stats
+}
+
 if wait_for_broker; then
 	setup_collector_principal
 	setup_api_command_principal
+	setup_mqtt_stats_principal
 	# Upgrade path: earlier versions granted the shared admin/controller
 	# account blanket devices/# publish rights so it could double as the
 	# command-publisher. That's now role-api-command's job instead — drop

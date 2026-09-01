@@ -35,6 +35,11 @@ export const config = {
     password: process.env.MQTT_API_COMMAND_PASSWORD ?? "",
   },
 
+  mqttStats: {
+    username: process.env.MQTT_STATS_USERNAME ?? "",
+    password: process.env.MQTT_STATS_PASSWORD ?? "",
+  },
+
   admin: {
     email: process.env.ADMIN_EMAIL ?? "",
     password: process.env.ADMIN_PASSWORD ?? "",
