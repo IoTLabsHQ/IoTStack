@@ -1,0 +1,21 @@
+{
+  "apiVersion": "iotlabs.io/v1",
+  "kind": "Component",
+  "id": "iotstack-workspace-api",
+  "title": "api",
+  "description": "REST API, MQTT credential management, and message collector for IoTStack",
+  "spec": {
+    "owner": "iotlabs-team",
+    "domain": "domain-infrastructure",
+    "system": "system-iotstack-workspace",
+    "type": "application",
+    "lifecycle": "unverified",
+    "features": [],
+    "dependsOn": [],
+    "deployments": [],
+    "evidence": [
+      "README.md / project manifest; no production observation"
+    ],
+    "repository": "https://github.com/quan-vu/IoTLabs-Platform"
+  }
+}
